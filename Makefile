@@ -9,16 +9,16 @@ server: bin/orchestrator
 client: bin/client
 
 folders:
-		@mkdir -p src include obj bin tmp
+	@mkdir -p src include obj bin tmp
 
 bin/orchestrator: obj/orchestrator.o
-		$(CC) $(LDFLAGS) $^ -o $@
+	$(CC) $(LDFLAGS) $^ -o $@
 
-bin/client: obj/client.o
-		$(CC) $(LDFLAGS) $^ -o $@
+bin/client: obj/client.o obj/writeInput.o
+	$(CC) $(LDFLAGS) $^ -o $@
 
 obj/%.o: src/%.c
-		$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-		rm -f obj/* tmp/* bin/*
+	rm -f obj/* tmp/* bin/*
