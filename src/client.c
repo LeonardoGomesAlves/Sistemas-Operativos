@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 
+
 //Módulo para criação do client
 
 int main (int argc, char* argv[]) {
@@ -21,21 +22,20 @@ int main (int argc, char* argv[]) {
     //execução de um comando
     if (strcmp(argv[1], "execute") == 0) {
 
-        char** input = malloc((argc-3) * sizeof(char*));
+        char** input = malloc((argc-4) * sizeof(char*));
 
         int i;
-        for (i = 3; argv[i] != NULL; i++) {
-            input[i-3] = strdup(argv[i]);
+        for (i = 4; argv[i] != NULL; i++) {
+            input[i-4] = strdup(argv[i]);
         } 
-        input[i-3] = NULL;
+        input[i-4] = NULL;
     
         //um unico processo
-        if (strcmp(argv[2], "-u") == 0) {            
+        if (strcmp(argv[3], "-u") == 0) {            
             writeInPipe_Single(input);
-
         }
         //varios processos
-        else if (strcmp(argv[2], "-p") == 0) {
+        else if (strcmp(argv[3], "-p") == 0) {
             
             printf("debug programas\n");
 

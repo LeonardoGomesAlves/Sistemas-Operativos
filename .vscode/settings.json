@@ -6,6 +6,7 @@
         "writeinput.h": "c",
         "wait.h": "c",
         "string.h": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "fcntl.h": "c"
     }
 }
