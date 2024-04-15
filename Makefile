@@ -14,7 +14,7 @@ folders:
 bin/orchestrator: obj/orchestrator.o obj/pipe.o obj/utilidades.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
-bin/client: obj/client.o obj/writeInput.o 
+bin/client: obj/client.o obj/clientSingle.o obj/pipe.o obj/utilidades.o
 	$(CC) $(LDFLAGS) $^ -o $@
 
 obj/%.o: src/%.c

@@ -2,20 +2,21 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include "writeInput.h"
+#include <unistd.h>
 
+char* createFifo (int pid) {
 
-int createFifo (char* nome) {
+    char fifo_name[30];
+    sprintf(fifo_name, "../tmp/CLIENT_%d", pid);
     
-    char* path = malloc(strlen(nome) + strlen("../tmp/") + 2);
-    strcpy(path, "../tmp/");
-    strcat(path, nome);
-    printf("%s", path);
-    
-    if (mkfifo(path, 0666) == -1) {
+    if (mkfifo(fifo_name, 0666) == -1) {
         perror("mkfifo");
-        return 1;   
+        return;   
     }
     
-    return 0;
+
+    char* toRet = malloc(strlen(fifo_name) + 1);
+    strcpy(toRet, fifo_name);
+    close(fifo_name);
+    return toRet;
 }

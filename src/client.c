@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <string.h>
-#include <writeInput.h>
 #include <stdlib.h>
+#include "clientSingle.h"
 
 
 
@@ -18,20 +18,15 @@ int main (int argc, char* argv[]) {
         printf("Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
         return 0;
     }
-    
+
     //execução de um comando
     if (strcmp(argv[1], "execute") == 0) {
 
-        char** input = malloc((argc-4) * sizeof(char*));
-
-        int i;
-        for (i = 4; argv[i] != NULL; i++) {
-            input[i-4] = strdup(argv[i]);
-        } 
-        input[i-4] = NULL;
+        char* input = malloc(strlen(argv[4]));
+        strcpy(input, argv[4]);
     
         //um unico processo
-        if (strcmp(argv[3], "-u") == 0) {            
+        if (strcmp(argv[3], "-u") == 0) {           
             writeInPipe_Single(input);
         }
         //varios processos

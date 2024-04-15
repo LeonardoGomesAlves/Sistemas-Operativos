@@ -7,11 +7,11 @@
 #include <sys/stat.h>
 #include <string.h>
 #include "pipe.h"
-#include "writeInput.h"
+#include "clientSingle.h"
 
 
 //Deixa no estado necessário para o execvp
-void separa_argumentos (char* commands[BSIZE],char buf[BSIZE]){ 
+int separa_argumentos (char** commands, char* buf){ 
     
     char * str = NULL;
     int i = 0;
@@ -19,4 +19,5 @@ void separa_argumentos (char* commands[BSIZE],char buf[BSIZE]){
 		commands[i++] = str;
 	}
 	commands[i] = NULL;
+	return i;
 }

@@ -10,8 +10,8 @@
 #include <sys/stat.h>
 #include <string.h>
 #include "pipe.h"
-#include "writeInput.h"
+#include "clientSingle.h"
 
 
-void separa_argumentos (char* commands[BSIZE],char buf[BSIZE]);
+int separa_argumentos (char** commands,char* buf);
 #endif
