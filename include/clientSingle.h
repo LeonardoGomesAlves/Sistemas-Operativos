@@ -3,9 +3,8 @@
 #define BSIZE 50
 
 typedef struct msg {
-    char* comando;
-    char** argumentos;
-    char* pid_path;
+    char argumentos[300];
+    char pid_path[30];
 } Msg;
 
 int writeInPipe_Single (char* input);

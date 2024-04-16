@@ -27,35 +27,44 @@ int main (int argc, char* argv[]) {
     Msg buf;
     ssize_t bytes_read;
     int fd_server;
+    int status;
     fd_server = open(SERVER, O_RDONLY);
-    if (fd_server == -1) {
+
+    if (fd_server == -1) {  
         perror("open");
         return 1;
     }
 
+    while(1) {
+        while ((bytes_read = read(fd_server, &buf, sizeof(Msg))) > 0) 
+        {
+            char** commands = malloc(300);
+            separa_argumentos(commands, buf.argumentos);
 
-        while ((bytes_read = read(fd_server, &buf, sizeof(Msg))) > 0) {
-            //SEG FAULT QUANDO MEXO NESTE BUFFER
-            /* if (execvp(buf.argumentos[0], buf.argumentos) == -1) {
+            int filho_pid = fork();
+            
+            if (filho_pid == -1) {
+                perror("fork_filho");
+                return 1;
+            } else if (filho_pid == 0) {
+                if (execvp(commands[0],commands) == -1) 
+                {
                     perror("execvp");
                     return 1;
-            } */
+                }
+                _exit(0);
+            }
+            else {
+                wait(&status);
+            }
+
+           printf("teste\n");
         }
+    }        
 
-        /* bytes_read = read(fd_server, &buf, sizeof(Msg));
-        if (bytes_read == -1) {
-            perror("read");
-            return 1;
-        } else if (bytes_read == 0) {
-            continue;
-        }
-
-        if (bytes_read > 0) {
-            
-        } */
-
-    close(fd_server);
+        close(fd_server);
 
 
     return 0;
+
 }

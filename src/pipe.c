@@ -11,7 +11,7 @@ char* createFifo (int pid) {
     
     if (mkfifo(fifo_name, 0666) == -1) {
         perror("mkfifo");
-        return;   
+        return NULL;
     }
     
 
