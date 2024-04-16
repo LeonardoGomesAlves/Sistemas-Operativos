@@ -28,39 +28,35 @@ int writeInPipe_Single (char* input) {
     //CRIAR PIPE DO CLIENT
     int pid = getpid();
     char* fd_client_path = createFifo(pid);
-
-    //printf("%s", fd_client_path);
-    /* fd_client = open(fd_client_path, O_RDONLY);
-    if (fd_client == -1) {
-        perror("open");
-        return -1;
-    }  */
-
-    
+       
     //INSERIR NA STRUCT MSG PARA ENVIAR PARA O PIPE 
     Msg toPipe;
 
     strcpy(toPipe.argumentos, input);
 
-    strcpy(toPipe.pid_path, fd_client_path); //acho q falta abrir esapaço
+    strcpy(toPipe.pid_path, fd_client_path);
 
     //ENVIAR PARA O PIPE
-    printf("%s\n", toPipe.pid_path);
     write(fd_server, &toPipe, sizeof(toPipe));
     close(fd_server);
 
     //LÊ O OUTPUT QUE SERÁ ENVIADO PELO SERVER PARA O CLIENT
+    //O FD_CLIENT TEM QUE SER ABERTO AQUI!!
+    fd_client = open(fd_client_path, O_RDONLY);
+    if (fd_client == -1) {
+        perror("open");
+        return -1;
+    } 
 
     Msg buffer;
     size_t bytes_read;
-  //   while ((bytes_read = read(fd_client, &buffer, sizeof(Msg))) > 0);  
-//
-  //  for (int i = 0; input[i] != NULL; i++) {
-  //      bytes_read = write(fd_server, input[i], strlen(input[i]));
-  //      if (bytes_read == -1) {
-  //          perror("write");
-  //          close(fd_server);
-  //          return -1;
+    while ((bytes_read = read(fd_client, &buffer, sizeof(Msg))) > 0) {
+        write(1, buffer.response, strlen(buffer.response));
+    }  
+    close(fd_client);
+
+
+
     return 0;
 }
       
