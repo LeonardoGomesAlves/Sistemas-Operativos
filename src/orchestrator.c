@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
-#include <unistd.h>
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -30,8 +30,10 @@ int main (int argc, char* argv[]) {
         return 1;   
     }
 
+    //criar repositório do argv, caso não exista
     mkdir(argv[1], 0700);
 
+    //abrir pipe do server
     Msg buf;
     ssize_t bytes_read;
     int fd_server;
@@ -43,11 +45,30 @@ int main (int argc, char* argv[]) {
         return 1;
     }
 
+    //criação do ficheiro para guardar info no servidor
+    char* server_info = malloc(strlen("../tmp/SERVER_INFO") + 1);
+    sprintf(server_info, "../tmp/SERVER_INFO");
+
+    int server_output_info = open(server_info, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (server_output_info == -1) {
+        perror("open");
+        return 1;
+    }
+
+
     int n_tasks = 1;
 
     while(1) {
         while ((bytes_read = read(fd_server, &buf, sizeof(Msg))) > 0) 
         {
+            struct timeval* inicio_time = malloc(sizeof(struct timeval*));
+            struct timezone* zona = NULL;
+            int verifytime = gettimeofday(inicio_time, zona);
+            if (verifytime == -1) {
+                perror("gettimeofday");
+                return 1;
+            }
+
             //FICHEIRO DE ERROS
             char* erros = malloc(strlen(argv[1]) + 15);
             sprintf(erros, "%sTASK%d_ERRORS", argv[1], n_tasks);
@@ -76,6 +97,7 @@ int main (int argc, char* argv[]) {
 
             char** commands = malloc(300);
             separa_argumentos(commands, buf.argumentos);
+            char* aux = malloc(strlen(argv[1]) + 15);
 
             int filho_pid = fork();
             
@@ -86,7 +108,6 @@ int main (int argc, char* argv[]) {
             } else if (filho_pid == 0) {
                 //CRIAR O FICHEIRO DE OUTPUT
                 int stdout = dup(1);
-                char* aux = malloc(strlen(argv[1]) + 15);
                 sprintf(aux, "%sTASK%d_OUTPUT", argv[1], n_tasks);
         
                 int file_out = open(aux, O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -112,15 +133,41 @@ int main (int argc, char* argv[]) {
             else {
                 waitpid(filho_pid, &status, 0);
             }
+
+            //tempo final e escrita no ficheiro
+            struct timeval* fim_time = malloc(sizeof(struct timeval*));
+            //struct timezone* zona2 = NULL;
             
+            int verifytime2 = gettimeofday(fim_time, zona);
+            if (verifytime2 == -1) {
+                perror("gettimeofday");
+                return 1;
+            }
+
+            suseconds_t tempomicrosegundos = fim_time->tv_usec - inicio_time->tv_usec;
+            int len = snprintf(NULL, 0, "Task %d\nTime elapsed: %ld\n", n_tasks, tempomicrosegundos);
+            char *toWrite_output = malloc(len + 1);
+            if (toWrite_output != NULL) {
+                sprintf(toWrite_output, "Task %d\nTime elapsed: %ld\n\n", n_tasks, tempomicrosegundos);
+                write(server_output_info, toWrite_output, len);
+            }
+
             close(erros_out);
             dup2(save_errors, 2);
             n_tasks++;
 
+            free(erros);
+            free(inicio_time);
+            free(commands);
+            free(aux);
+            free(fim_time);
+            free(toWrite_output);
         }
     }        
 
         close(fd_server);
+        close(server_output_info);
+        free(server_info);
 
 
     return 0;
