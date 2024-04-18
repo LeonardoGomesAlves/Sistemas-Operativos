@@ -42,7 +42,7 @@ int writeInPipe_Single (char* input) {
 
     //LÊ O OUTPUT QUE SERÁ ENVIADO PELO SERVER PARA O CLIENT
     //O FD_CLIENT TEM QUE SER ABERTO AQUI!!
-    fd_client = open(fd_client_path, O_RDONLY);
+    /* fd_client = open(fd_client_path, O_RDONLY);
     if (fd_client == -1) {
         perror("open");
         return -1;
@@ -53,7 +53,7 @@ int writeInPipe_Single (char* input) {
     while ((bytes_read = read(fd_client, &buffer, sizeof(Msg))) > 0) {
         write(1, buffer.response, strlen(buffer.response));
     }  
-    close(fd_client);
+    close(fd_client); */
 
 
 

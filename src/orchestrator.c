@@ -11,6 +11,7 @@
 #include "utilidades.h"
 #include "orchestrator.h"
 #include <stdlib.h>
+#include "queue.h"
 
 
 // Módulo para criação do servidor
@@ -58,9 +59,23 @@ int main (int argc, char* argv[]) {
 
     int n_tasks = 1;
 
+    Queue* fila = newQueue();
+
     while(1) {
-        while ((bytes_read = read(fd_server, &buf, sizeof(Msg))) > 0) 
-        {
+        while ((bytes_read = read(fd_server, &buf, sizeof(Msg))) > 0) {
+            Msg data = buf;
+            Msg data2 = buf;
+            enQueue(fila, data);
+            //enQueue(fila, data2);
+            deQueue(&fila);
+            //enQueue(fila, data2);
+            printQueue(fila);
+
+
+
+
+        }
+        /* {
             struct timeval* inicio_time = malloc(sizeof(struct timeval*));
             struct timezone* zona = NULL;
             int verifytime = gettimeofday(inicio_time, zona);
@@ -162,7 +177,7 @@ int main (int argc, char* argv[]) {
             free(aux);
             free(fim_time);
             free(toWrite_output);
-        }
+        } */
     }        
 
         close(fd_server);
