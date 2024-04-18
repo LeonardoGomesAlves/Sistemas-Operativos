@@ -2,17 +2,22 @@
 #define QUEUE_H
 #include "clientSingle.h"
 
-typedef struct queue {
+typedef struct node {
     Msg data;
-    struct queue* next;
+    struct node *next;
+} Node;
+
+typedef struct queue {
+    Node *head;
+    Node *tail;
     int tamanho;
 } Queue;
 
-Queue* newQueue ();
+void newQueue (Queue* aux);
 
 void enQueue (Queue* fila, Msg toInsert);
 
-void deQueue (Queue** fila);
+void deQueue (Queue* fila);
 
 void printQueue (Queue* fila);
 

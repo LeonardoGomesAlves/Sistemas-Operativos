@@ -2,59 +2,51 @@
 #include <stdlib.h>
 #include "queue.h"
 
-Queue* newQueue () {
-    Queue* aux = malloc(sizeof(Queue));
-    aux->next = NULL;
-    aux->tamanho = 0;
-    return aux;
+void newQueue (Queue* aux) {
+    aux->head = NULL;
+    aux->tail = NULL;
 }
 
 void enQueue (Queue* fila, Msg toInsert) {
-    if (fila == NULL) {
-        Queue* aux = newQueue();
-        fila = aux;
+    Node* newNode = malloc(sizeof(Node));
+    if (!newNode) {
+        perror("malloc");
+        return;
     }
-    if (fila->tamanho == 0) {
-        fila->data = toInsert;
-        fila->tamanho++;
+    newNode->data = toInsert;
+    newNode->next = NULL;
+
+    if (fila->tail != NULL) {
+        fila->tail->next = newNode;
     }
-    else {
-        Queue* copia = fila;
-        while (copia->next != NULL) {
-            copia = copia->next;
-        }
-        Queue* nova = malloc(sizeof(Queue));
-        nova->data = toInsert;
-        nova->next = NULL;
-        copia->next = nova;
-        fila->tamanho++;
-    } 
+    fila->tail = newNode;
+
+    //fila vazia
+    if (fila->head == NULL) {
+        fila->head = newNode;
+    }
+
+    fila->tamanho++;
     
 }
 
-void deQueue (Queue** fila) {
-    if ((*fila)->tamanho == 1) {
-        (*fila)->tamanho--;
-        free(*fila);
-        *fila = NULL;
-    }
+void deQueue (Queue* fila) {
+    //fila vazia
+    if (fila->head != NULL) {
+        fila->head = fila->head->next;
 
-    else if (*fila != NULL) {
-        Queue* aux = (*fila)->next;
-        free(*fila);
-        if ((*fila)->next != NULL) {
-            *fila = aux;
-            (*fila)->tamanho--;
-        }   
-    }
-
+        //se a fila enventualmente ficar vazia, a tail tmb fica vazia
+        if (fila->head == NULL) {
+            fila->tail = NULL;
+        }
+        fila->tamanho--;
+    }  
 }
 
 void printQueue (Queue* fila) {
-    Queue* save = fila;
-    while(fila != NULL) {
-        printf("%s\n", fila->data.argumentos);
-        fila = fila->next;
+    Node* atual = fila->head;
+    while(atual != NULL) {
+        printf("%s\n", atual->data.argumentos);
+        atual = atual->next;
     }
-    fila = save;
 }
