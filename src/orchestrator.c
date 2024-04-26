@@ -63,128 +63,63 @@ int main (int argc, char* argv[]) {
     Queue* fila = malloc(sizeof(Queue));
     newQueue(fila);
 
-    while(1) {
-    
-        while ((bytes_read = read(fd_server, &toRead, sizeof(Msg))) > 0) {
-            enQueue(fila, toRead);
+    int pipefd[2];
+    if (pipe(pipefd) == -1){
+        perror("pipe");
+        return 1;
+    }
+
+    int pid_geral = fork();
+
+    if (pid_geral == -1) {
+        perror("fork");
+        return 1;
+    }
+
+    //filho
+    if (pid_geral == 0) {
+        close(pipefd[1]);
+        while (1) {          
+
+            Msg toExecute;
+            ssize_t bytes_read = read(pipefd[0], &toExecute, sizeof(Msg));
+            //enQueue(fila, toExecute);
+
+            //filho
+            if (bytes_read > 0) {
+                handleQueue(toExecute, argv[1]);
+            }
+
         }
-
-        //pai
-         {
-            //printf("%d\n", fila->tamanho);
-
-            if (fila->head != NULL) {
-        
-                buf = fila->head->data;
-
-
-                struct timeval* inicio_time = malloc(sizeof(struct timeval*));
-                struct timezone* zona = NULL;
-                int verifytime = gettimeofday(inicio_time, zona);
-                if (verifytime == -1) {
-                    perror("gettimeofday");
-                    return 1;
-                }
-
-                //FICHEIRO DE ERROS
-                char* erros = malloc(strlen(argv[1]) + 15);
-                sprintf(erros, "%sTASK%d_ERRORS", argv[1], n_tasks);
+        close(pipefd[0]);
+    }
+    else {
+        close(pipefd[0]);
+        while(1) {
+            while ((bytes_read = read(fd_server, &toRead, sizeof(Msg))) > 0) {
                 
-                int erros_out = open(erros, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-                if(erros_out == -1){
-                    perror("open");
-                    return 1;
-                }
-
-                int save_errors = dup(2);
-                dup2(erros_out, 2);
-
-
-
                 //ENVIA MENSAGEM PARA O CLIENT
-                sprintf(buf.response, "TASK %d Received\n", n_tasks);
-                int fd_client = open(buf.pid_path, O_WRONLY);
+                toRead.n_task = n_tasks++;
+                sprintf(toRead.response, "TASK %d Received\n", toRead.n_task);
+                
+                int fd_client = open(toRead.pid_path, O_WRONLY);
                 if (fd_client == -1) {
                     perror("open");
                     return 1;
                 }
 
-                write(fd_client, &buf, sizeof(buf));
+                write(fd_client, &toRead, sizeof(toRead));
                 close(fd_client);
 
-                char** commands = malloc(300);
-                separa_argumentos(commands, buf.argumentos);
-                char* aux = malloc(strlen(argv[1]) + 15);
-
-                int filho_pid = fork();
-                
-                if (filho_pid == -1) {
-                    perror("fork_filho");
-                    return 1;
-
-                } else if (filho_pid == 0) {
-                    //CRIAR O FICHEIRO DE OUTPUT
-                    int stdout = dup(1);
-                    sprintf(aux, "%sTASK%d_OUTPUT", argv[1], n_tasks);
-            
-                    int file_out = open(aux, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-                    if(file_out == -1){
-                        perror("open");
-                        _exit(-1);
-                    }
-                    
-                    dup2(file_out, 1);
-
-                    //EXECUÇÃO DO COMANDO DO USER
-                    if(execvp(commands[0],commands) == -1) 
-                    {
-                        perror("execvp");
-                        return 1;
-                    }
-
-                    close(file_out);
-                    dup2(stdout, 1);
-                    _exit(0);
-                }
-
-                else {
-                    waitpid(filho_pid, &status, 0);
-                }
-
-                //tempo final e escrita no ficheiro
-                struct timeval* fim_time = malloc(sizeof(struct timeval*));
-                //struct timezone* zona2 = NULL;
-                
-                int verifytime2 = gettimeofday(fim_time, zona);
-                if (verifytime2 == -1) {
-                    perror("gettimeofday");
-                    return 1;
-                }
-
-                suseconds_t tempomicrosegundos = fim_time->tv_usec - inicio_time->tv_usec;
-                int len = snprintf(NULL, 0, "Task %d\nTime elapsed: %ld\n", n_tasks, tempomicrosegundos);
-                char *toWrite_output = malloc(len + 1);
-                if (toWrite_output != NULL) {
-                    sprintf(toWrite_output, "Task %d\nTime elapsed: %ld\n\n", n_tasks, tempomicrosegundos);
-                    write(server_output_info, toWrite_output, len);
-                }
-
-                close(erros_out);
-                dup2(save_errors, 2);
-                n_tasks++;
-
-                free(erros);
-                free(inicio_time);
-                free(commands);
-                free(aux);
-                free(fim_time);
-                free(toWrite_output); 
-
+                enQueue(fila, toRead);
+                write(pipefd[1], &fila->head->data, sizeof(Msg));
+                //printf("%d\n", fila->tamanho);
                 deQueue(fila);
             }
-        }
-    
-    }        
+        }        
+        close(pipefd[1]);
+        wait(NULL);
+    }
 
         close(fd_server);
         close(server_output_info);

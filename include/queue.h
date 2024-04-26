@@ -21,4 +21,6 @@ void deQueue (Queue* fila);
 
 void printQueue (Queue* fila);
 
+void handleQueue (Msg toExecute, char* server_output_info);
+
 #endif
