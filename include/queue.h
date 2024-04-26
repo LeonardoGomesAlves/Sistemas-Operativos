@@ -1,6 +1,6 @@
 #ifndef QUEUE_H
 #define QUEUE_H
-#include "clientSingle.h"
+#include "gestorClient.h"
 
 typedef struct node {
     Msg data;
@@ -22,5 +22,7 @@ void deQueue (Queue* fila);
 void printQueue (Queue* fila);
 
 void handleQueue (Msg toExecute, char* server_output_info);
+
+void handleMultiple (Msg toExecute, char* server_output_info);
 
 #endif

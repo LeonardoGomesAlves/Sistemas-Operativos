@@ -8,6 +8,7 @@
         "string.h": "c",
         "unistd.h": "c",
         "fcntl.h": "c",
-        "clientsingle.h": "c"
+        "clientsingle.h": "c",
+        "gestorclient.h": "c"
     }
 }

@@ -6,7 +6,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <string.h>
-#include "clientSingle.h"
+#include "gestorClient.h"
 #include "pipe.h"
 #include "utilidades.h"
 #include "orchestrator.h"
@@ -87,7 +87,12 @@ int main (int argc, char* argv[]) {
 
             //filho
             if (bytes_read > 0) {
-                handleQueue(toExecute, argv[1]);
+                if(toExecute.tipo == 0){
+                    handleQueue(toExecute, argv[1]);
+                }
+                else{
+                    handleMultiple(toExecute,argv[1]);
+                }
             }
 
         }

@@ -6,14 +6,14 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
-#include "clientSingle.h"
+#include "gestorClient.h"
 #include "orchestrator.h"
 #include "pipe.h"
 #include "utilidades.h"
 
 
 
-int writeInPipe_Single (char* input) {
+int writeInPipe (char* input,int tipo) {
 
     int fd_server, fd_client;
 
@@ -31,6 +31,8 @@ int writeInPipe_Single (char* input) {
        
     //INSERIR NA STRUCT MSG PARA ENVIAR PARA O PIPE 
     Msg toPipe;
+
+    toPipe.tipo = tipo;
 
     strcpy(toPipe.argumentos, input);
 

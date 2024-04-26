@@ -6,9 +6,10 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <stdlib.h>
-#include "clientSingle.h"
+#include "gestorClient.h"
 
-
+#define SINGLE 0
+#define MULTIPLE 1
 
 //Módulo para criação do client
 
@@ -26,19 +27,16 @@ int main (int argc, char* argv[]) {
         strcpy(input, argv[4]);
     
         //um unico processo
-        if (strcmp(argv[3], "-u") == 0) {           
-            writeInPipe_Single(input);
+        if (strcmp(argv[3], "-u") == 0) {    
+            writeInPipe(input,SINGLE);
         }
         //varios processos
         else if (strcmp(argv[3], "-p") == 0) {
-            
-            printf("debug programas\n");
-
+            writeInPipe(input,MULTIPLE);
         }
 
         else {
             printf("Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
-
         }       
     
     
