@@ -111,6 +111,7 @@ void handleMultiple (Msg toExecute, char* server_output_info){
 
     int save_errors = dup(2);
     dup2(erros_out, 2);
+    close(erros_out);
 
     char** commands = malloc(300);
     int n_commands = separa_argumentos(commands, buf.argumentos,buf.tipo);
@@ -169,6 +170,10 @@ void handleMultiple (Msg toExecute, char* server_output_info){
 					exec_command(commands[i]);
 				}
 			}
+
+            close(file_out);
+            close(erros_out);
+
 		}
 	}
 
@@ -209,6 +214,7 @@ void handleMultiple (Msg toExecute, char* server_output_info){
     }
 
     close(file_out);
+    close(server_output_inf);
 
 	return;
 
@@ -273,6 +279,7 @@ void handleQueue (Msg toExecute, char* server_output_info) {
         }
 
         close(file_out);
+        close(erros_out);
         dup2(stdout, 1);
         _exit(0);
     }
@@ -306,6 +313,7 @@ void handleQueue (Msg toExecute, char* server_output_info) {
         write(server_output_inf, toWrite_output, len);
     }
 
+    close(server_output_inf);
     close(erros_out);
     dup2(save_errors, 2);
     //n_tasks++;

@@ -13,6 +13,10 @@
 #include <stdlib.h>
 #include "queue.h"
 
+#define AVAILABLE "A"
+
+#define UNAVAILABLE "U"
+
 
 // Módulo para criação do servidor
 
@@ -69,6 +73,27 @@ int main (int argc, char* argv[]) {
         return 1;
     }
 
+    if(mkfifo("../tmp/fifo_queue", 0666) == -1) {
+        perror("mkfifo");
+        return 1;
+    }
+
+    int fifos;
+    if((fifos = open("../tmp/fifo_queue", O_RDWR)) == -1){
+        perror("open");
+        return 1;
+    }
+
+
+    /* int pipe_available[2];
+    if (pipe(pipe_available) == -1){
+        perror("pipe");
+        return 1;
+    }
+    fcntl(pipe_available[0], F_SETFL, O_NONBLOCK);
+    fcntl(pipe_available[1], F_SETFL, O_NONBLOCK); */
+
+
     int pid_geral = fork();
 
     if (pid_geral == -1) {
@@ -78,28 +103,35 @@ int main (int argc, char* argv[]) {
 
     //filho
     if (pid_geral == 0) {
-        close(pipefd[1]);
+        //close(pipe_available[0]);
+        //close(pipefd[1]);
+        //write(pipe_available[1], AVAILABLE, strlen(AVAILABLE) + 1);
         while (1) {          
 
             Msg toExecute;
-            ssize_t bytes_read = read(pipefd[0], &toExecute, sizeof(Msg));
-            //enQueue(fila, toExecute);
+            //ssize_t bytes_read = read(pipefd[0], &toExecute, sizeof(Msg));
+            ssize_t bytes_read = read(fifos, &toExecute, sizeof(Msg));
 
             //filho
             if (bytes_read > 0) {
+                //write(pipe_available[1], UNAVAILABLE, strlen(UNAVAILABLE) + 1);
                 if(toExecute.tipo == 0){
                     handleQueue(toExecute, argv[1]);
                 }
                 else{
                     handleMultiple(toExecute,argv[1]);
                 }
+                //write(pipe_available[1], AVAILABLE, strlen(AVAILABLE) + 1);
             }
 
         }
-        close(pipefd[0]);
+        close(fifos);
+        //close(pipefd[0]);
+        //close(pipe_available[1]);
     }
     else {
-        close(pipefd[0]);
+        //close(pipe_available[1]);
+        //close(pipefd[0]);
         while(1) {
             while ((bytes_read = read(fd_server, &toRead, sizeof(Msg))) > 0) {
                 
@@ -116,13 +148,24 @@ int main (int argc, char* argv[]) {
                 write(fd_client, &toRead, sizeof(toRead));
                 close(fd_client);
 
-                enQueue(fila, toRead);
-                write(pipefd[1], &fila->head->data, sizeof(Msg));
-                //printf("%d\n", fila->tamanho);
-                deQueue(fila);
-            }
+                //enQueue(fila, toRead);
+
+                write(fifos, &toRead, sizeof(toRead));
+                //write(pipefd[1], &fila->head->data, sizeof(Msg));
+                //deQueue(fila);
+                }
+                
+                /* char estado[2];
+                //read(pipe_available[0], estado, strlen(AVAILABLE) + 1);
+                if (strcmp(estado, AVAILABLE) == 0) {
+                    write(pipefd[1], &fila->head->data, sizeof(Msg));
+                    //printf("%d\n", fila->tamanho);
+                    deQueue(fila);
+                } */
+  
         }        
-        close(pipefd[1]);
+        close(fifos);
+        //close(pipefd[1]);
         wait(NULL);
     }
 
