@@ -61,6 +61,8 @@ int main (int argc, char* argv[]) {
         return 1;
     }
 
+    //open(SERVER, O_WRONLY);
+
 
     int n_tasks = 1;
 
@@ -94,15 +96,15 @@ int main (int argc, char* argv[]) {
     fcntl(pipe_available[1], F_SETFL, O_NONBLOCK); */
 
 
-    int pid_geral = fork();
+    /* int pid_geral = fork();
 
     if (pid_geral == -1) {
         perror("fork");
         return 1;
-    }
+    } */
 
     //filho
-    if (pid_geral == 0) {
+    /* if (pid_geral == 0) {
         //close(pipe_available[0]);
         //close(pipefd[1]);
         //write(pipe_available[1], AVAILABLE, strlen(AVAILABLE) + 1);
@@ -128,8 +130,8 @@ int main (int argc, char* argv[]) {
         close(fifos);
         //close(pipefd[0]);
         //close(pipe_available[1]);
-    }
-    else {
+    } */
+     
         //close(pipe_available[1]);
         //close(pipefd[0]);
         while(1) {
@@ -148,11 +150,23 @@ int main (int argc, char* argv[]) {
                 write(fd_client, &toRead, sizeof(toRead));
                 close(fd_client);
 
-                //enQueue(fila, toRead);
+                enQueue(fila, toRead);
 
-                write(fifos, &toRead, sizeof(toRead));
+                usleep(1000); //engana o read a continuar a ler para nao fazer sequencialmente
+
+                //write(fifos, &toRead, sizeof(toRead));
                 //write(pipefd[1], &fila->head->data, sizeof(Msg));
                 //deQueue(fila);
+                }
+
+                if (fila->head != NULL) {
+                    if(fila->head->data.tipo == 0){
+                        handleQueue(fila->head->data, argv[1]);
+                    }
+                    else{
+                        handleMultiple(fila->head->data,argv[1]);
+                    } 
+                    deQueue(fila);
                 }
                 
                 /* char estado[2];
@@ -166,8 +180,8 @@ int main (int argc, char* argv[]) {
         }        
         close(fifos);
         //close(pipefd[1]);
-        wait(NULL);
-    }
+        //wait(NULL);
+    
 
         close(fd_server);
         close(server_output_info);
