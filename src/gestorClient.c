@@ -58,9 +58,18 @@ int writeInPipe (char* input,int tipo) {
         }  
     } else {
         char buffer[4096];
-        while((bytes_read = read(fd_client, &buffer, sizeof(buffer))) > 0) {
-            write(1, buffer, sizeof(buffer));
+        while((bytes_read = read(fd_client, &buffer, sizeof(buffer))) > 0);
+        int fd_status = open("../tmp/status", O_RDONLY);
+        if (fd_status == -1) {
+            perror("open");
+            return 1;
         }
+        char status_buf[4096];
+        ssize_t bytes_status;
+        while((bytes_status = read(fd_status, status_buf, sizeof(status_buf))) > 0) {
+            write(1, status_buf, bytes_status);
+        }
+        close(fd_status);
     }
 
 

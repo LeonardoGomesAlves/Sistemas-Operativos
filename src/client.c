@@ -55,7 +55,7 @@ int main (int argc, char* argv[]) {
         char* input = malloc(strlen(argv[1]));
         strcpy(input, argv[1]);
         writeInPipe(input,STATUS);
-        printf("debug cliente\n");
+        //printf("debug cliente\n");
     
     }
 
