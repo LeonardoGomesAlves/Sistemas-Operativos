@@ -50,14 +50,21 @@ int writeInPipe (char* input,int tipo) {
         return -1;
     } 
 
-    Msg buffer;
     size_t bytes_read;
-    while ((bytes_read = read(fd_client, &buffer, sizeof(Msg))) > 0) {
-        write(1, buffer.response, strlen(buffer.response));
-    }  
+    if (tipo != 2) {
+        Msg buffer;
+        while ((bytes_read = read(fd_client, &buffer, sizeof(Msg))) > 0) {
+            write(1, buffer.response, strlen(buffer.response));
+        }  
+    } else {
+        char buffer[4096];
+        while((bytes_read = read(fd_client, &buffer, sizeof(buffer))) > 0) {
+            write(1, buffer, sizeof(buffer));
+        }
+    }
+
+
     close(fd_client);
-
-
 
     return 0;
 }

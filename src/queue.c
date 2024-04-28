@@ -90,6 +90,9 @@ void handleMultiple (Msg toExecute, char* server_output_info){
     int status;
 
     Msg buf = toExecute;
+
+    char copy[300];
+    strcpy(copy, toExecute.argumentos);
     
     struct timeval* inicio_time = malloc(sizeof(struct timeval*));
     struct timezone* zona = NULL;
@@ -205,11 +208,16 @@ void handleMultiple (Msg toExecute, char* server_output_info){
     }
 
 
+    //O TEMPO DISTO ESTÁ ABSURDAMENTE BAIXO, ficou em microsegundos mas parece milisegundos comparando com o single execution
     suseconds_t tempomicrosegundos = fim_time->tv_usec - inicio_time->tv_usec;
-    int len = snprintf(NULL, 0, "\nTask %d\nTime elapsed: %ld\n", buf.n_task, tempomicrosegundos);
+    //printf("%ld %ld\n", fim_time->tv_usec, inicio_time->tv_usec);
+    /* if (tempomicrosegundos < 0) {
+        tempomicrosegundos += 1000000;
+    } */
+    int len = snprintf(NULL, 0, "%d %s %ld ms\n", buf.n_task, copy, tempomicrosegundos);
     char *toWrite_output = malloc(len + 1);
     if (toWrite_output != NULL) {
-        sprintf(toWrite_output, "\nTask %d\nTime elapsed: %ld\n", buf.n_task, tempomicrosegundos);
+        sprintf(toWrite_output, "%d %s %ld ms\n", buf.n_task, copy, tempomicrosegundos);
         write(server_output_inf, toWrite_output, len);
     }
 
@@ -226,7 +234,10 @@ void handleQueue (Msg toExecute, char* server_output_info) {
     int status;
 
     Msg buf = toExecute;
-    
+
+    char copy[300];
+    strcpy(copy, buf.argumentos);
+
     struct timeval* inicio_time = malloc(sizeof(struct timeval*));
     struct timezone* zona = NULL;
     int verifytime = gettimeofday(inicio_time, zona);
@@ -306,10 +317,14 @@ void handleQueue (Msg toExecute, char* server_output_info) {
 
 
     suseconds_t tempomicrosegundos = fim_time->tv_usec - inicio_time->tv_usec;
-    int len = snprintf(NULL, 0, "\nTask %d\nTime elapsed: %ld\n", buf.n_task, tempomicrosegundos);
+    if (tempomicrosegundos < 0) {
+        tempomicrosegundos += 1000000;
+    }
+    tempomicrosegundos = tempomicrosegundos / 1000;
+    int len = snprintf(NULL, 0, "%d %s %ld ms\n", buf.n_task, copy, tempomicrosegundos);
     char *toWrite_output = malloc(len + 1);
     if (toWrite_output != NULL) {
-        sprintf(toWrite_output, "\nTask %d\nTime elapsed: %ld\n", buf.n_task, tempomicrosegundos);
+        sprintf(toWrite_output, "%d %s %ld ms\n", buf.n_task, copy, tempomicrosegundos);
         write(server_output_inf, toWrite_output, len);
     }
 

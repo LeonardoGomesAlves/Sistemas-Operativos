@@ -10,13 +10,17 @@
 
 #define SINGLE 0
 #define MULTIPLE 1
+#define STATUS 2
 
 //Módulo para criação do client
 
 int main (int argc, char* argv[]) {
 
     if(argc == 1) {
-        printf("Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
+        char* input_inv = malloc(100);
+        sprintf(input_inv, "Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
+        write(1,input_inv, sizeof(input_inv));
+        free(input_inv);
         return 0;
     }
 
@@ -36,7 +40,11 @@ int main (int argc, char* argv[]) {
         }
 
         else {
-            printf("Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
+            char* input_inv = malloc(100);
+            sprintf(input_inv, "Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
+            write(1,input_inv, sizeof(input_inv));
+            free(input_inv);
+            return 0;
         }       
     
     
@@ -44,15 +52,21 @@ int main (int argc, char* argv[]) {
 
     //argc == 2, porque o status é utilizado sem argumentos
     else if (strcmp(argv[1], "status") == 0 && argc == 2) {
+        char* input = malloc(strlen(argv[1]));
+        strcpy(input, argv[1]);
+        writeInPipe(input,STATUS);
         printf("debug cliente\n");
-    
-    
-    
     
     }
 
 
-    else printf("Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
+    else {
+        char* input_inv = malloc(100);
+        sprintf(input_inv, "Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
+        write(1,input_inv, sizeof(input_inv));
+        free(input_inv);
+        return 0;
+    }
 
     return 0;    
 }

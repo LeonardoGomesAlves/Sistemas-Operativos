@@ -61,6 +61,18 @@ int main (int argc, char* argv[]) {
         return 1;
     }
 
+    int len1 = snprintf(NULL, 0, "\nCompleted\n");
+    char* completed = malloc(len1 + 1);
+    if (completed != NULL) {
+        sprintf(completed, "\nCompleted\n");
+        write(server_output_info, completed, len1);
+        free(completed);
+    }
+
+    //criação do ficheiro 
+    char* in_execution = malloc(strlen("../tmp/IN_EXECUTION") + 1);
+    sprintf(in_execution, "../tmp/IN_EXECUTION");
+
     //open(SERVER, O_WRONLY);
 
 
@@ -80,11 +92,11 @@ int main (int argc, char* argv[]) {
         return 1;
     }
 
-    int fifos;
+    /* int fifos;
     if((fifos = open("../tmp/fifo_queue", O_RDWR)) == -1){
         perror("open");
         return 1;
-    }
+    } */
 
 
     /* int pipe_available[2];
@@ -105,84 +117,176 @@ int main (int argc, char* argv[]) {
 
     //filho
     if (pid_geral == 0) {
-        //close(pipe_available[0]);
-        //close(pipefd[1]);
+        close(pipefd[1]);
+        close(fd_server);
         //write(pipe_available[1], AVAILABLE, strlen(AVAILABLE) + 1);
-        while (1) {          
+        while (1) {      
+            //ESTA PARTE TRATA DE ESCREVER NO FICHEIRO PARA O CLIENT STATUS    
 
+            int server_execution = open(in_execution, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+            if (server_execution == -1) {
+                perror("open");
+                return 1;
+            }
+
+        
+            int len = snprintf(NULL, 0, "Executing\n");
+            char* to_execute_output = malloc(len + 1);
+            if (to_execute_output != NULL) {
+                sprintf(to_execute_output, "Executing\n");
+                write(server_execution, to_execute_output, len);
+                free(to_execute_output);
+            }
             Msg toExecute;
-            //ssize_t bytes_read = read(pipefd[0], &toExecute, sizeof(Msg));
             ssize_t bytes_read = read(pipefd[0], &toExecute, sizeof(Msg));
 
             //filho
             if (bytes_read > 0) {
-                //write(pipe_available[1], UNAVAILABLE, strlen(UNAVAILABLE) + 1);
+                //PARA O STATUS - ESCREVE QUE ESTÁ A EXECUTAR
+                int len = snprintf(NULL, 0, "%d %s\n", toExecute.n_task, toExecute.argumentos);
+                char* to_execute_output = malloc(len + 1);
+                if (to_execute_output != NULL) {
+                    sprintf(to_execute_output, "%d %s\n", toExecute.n_task, toExecute.argumentos);
+                    write(server_execution, to_execute_output, len);
+                    free(to_execute_output);
+                }
                 if(toExecute.tipo == 0){
                     handleQueue(toExecute, argv[1]);
                 }
                 else{
                     handleMultiple(toExecute,argv[1]);
                 }
-                //write(pipe_available[1], AVAILABLE, strlen(AVAILABLE) + 1);
             }
-
+            close(server_execution);
         }
-        close(fifos);
         //close(pipefd[0]);
         //close(pipe_available[1]);
     }
-     
-        //close(pipe_available[1]);
         //close(pipefd[0]);
         while(1) {
                 if ((bytes_read = read(fd_server, &toRead, sizeof(Msg))) > 0) {
-                
-                //ENVIA MENSAGEM PARA O CLIENT
-                toRead.n_task = n_tasks++;
-                sprintf(toRead.response, "TASK %d Received\n", toRead.n_task);
-                
-                int fd_client = open(toRead.pid_path, O_WRONLY);
-                if (fd_client == -1) {
-                    perror("open");
-                    return 1;
-                }
 
-                write(fd_client, &toRead, sizeof(toRead));
-                close(fd_client);
+                    //SE O REQUEST FOR UM STATUS
+                    if (toRead.tipo == 2) {
+                        char buffer[4096];
+                        char buffer_complete[4096];
 
-                enQueue(fila, toRead);
+                        int status_info = open("../tmp/status", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                        if (status_info == -1) {
+                            perror("open");
+                            return 1;
+                        }
+                        
 
-                usleep(1000); //engana o read a continuar a ler para nao fazer sequencialmente
+                        int fd_client = open(toRead.pid_path, O_WRONLY);
+                        if (fd_client == -1) {
+                            perror("open");
+                            return 1;
+                        }
 
-                //write(fifos, &toRead, sizeof(toRead));
-                } else {
+                        ssize_t reading;
 
-                write(pipefd[1], &fila->head->data, sizeof(Msg));
-                deQueue(fila);
-                //usleep(1000);
+                        //EM EXECUÇÃO
+                        int server_execution = open(in_execution, O_RDONLY);
+                        if (server_execution == -1) {
+                            perror("open");
+                            return 1;
+                        }
 
-                /* if (fila->head != NULL) {
-                    if(fila->head->data.tipo == 0){
-                        handleQueue(fila->head->data, argv[1]);
+                        while ((reading = read(server_execution, buffer, 4096)) > 0) {
+                            write(status_info, buffer, reading);
+                        }
+                        close(server_execution);
+
+                        //SCHEDULED
+                        //printf("%d\n", fila->tamanho);
+                        int server_scheduled = open("../tmp/scheduled", O_RDONLY);
+                        if (server_scheduled == -1) {
+                            perror("open");
+                            return 1;
+                        }
+                        ssize_t reading_scheduled;
+                        char buffer_scheduled[4096];
+
+                        while((reading_scheduled = read(server_scheduled, buffer_scheduled, 4096)) > 0) {
+                            write(status_info, buffer_scheduled, reading_scheduled);
+                        }
+                        close(server_scheduled);
+
+                        ssize_t reading_complete;
+                        //COMPLETADO
+
+                        int server_complete = open(server_info, O_RDONLY);
+                        if (server_complete == -1) {
+                            perror("open");
+                            return 1;
+                        }
+                        
+                        while((reading_complete = read(server_complete, buffer_complete, 4096)) > 0) {
+                            write(status_info, buffer_complete, reading_complete);
+                        }
+
+                        close(server_complete);
+                        close(fd_client);
+                        close(status_info);
+
+                    } else {
+                        //ENVIA MENSAGEM PARA O CLIENT
+                        toRead.n_task = n_tasks++;
+                        sprintf(toRead.response, "TASK %d Received\n", toRead.n_task);
+                        
+                        int fd_client = open(toRead.pid_path, O_WRONLY);
+                        if (fd_client == -1) {
+                            perror("open");
+                            return 1;
+                        }
+
+                        write(fd_client, &toRead, sizeof(toRead));
+                        close(fd_client);
+
+                        enQueue(fila, toRead);
+                        //printf("%d\n", fila->tamanho);
+
+                        usleep(1000); //engana o read a continuar a ler para nao fazer sequencialmente
+
                     }
-                    else{
-                        handleMultiple(fila->head->data,argv[1]);
-                    } 
+                
+                } else {
+                    int scheduled_info = open("../tmp/scheduled", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                    if (scheduled_info == -1) {
+                        perror("open");
+                        return 1;
+                    }
+                    
+
+                        char buffer_sc[12];
+                        sprintf(buffer_sc, "\nScheduled\n");
+                        write(scheduled_info, buffer_sc, strlen(buffer_sc));
+                        //if (fila->head != NULL) printf("%s\n",fila->head->data.argumentos);
+                        Node* save = fila->head;
+                        while (save != NULL) {
+                            //printf("%d\n", save->data.n_task);
+                            int len = snprintf(NULL, 0, "%d %s\n", save->data.n_task, save->data.argumentos);
+                            char* toWrite = malloc(len + 1);
+                            if (toWrite != NULL) {
+                                sprintf(toWrite, "%d %s\n", save->data.n_task, save->data.argumentos);
+                                write(scheduled_info, toWrite, len);
+                                free(toWrite);
+                            }
+                            save = save->next;
+                        }
+
+                    write(pipefd[1], &fila->head->data, sizeof(Msg));
                     deQueue(fila);
-                } */
+                    //close(scheduled_info);
+                //usleep(1000);
                 }
 
                 
-                /* char estado[2];
-                //read(pipe_available[0], estado, strlen(AVAILABLE) + 1);
-                if (strcmp(estado, AVAILABLE) == 0) {
-                    write(pipefd[1], &fila->head->data, sizeof(Msg));
-                    //printf("%d\n", fila->tamanho);
-                    deQueue(fila);
-                } */
+                
   
         }        
-        close(fifos);
+        //close(fifos);
         close(pipefd[1]);
         //wait(NULL);
     
