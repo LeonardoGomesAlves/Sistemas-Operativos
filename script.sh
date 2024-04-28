@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for ((i = 1; i <= 200; i++))
+for ((i = 1; i <= 2000; i++))
 do
     echo "./client execute 100 -u "man ls""
 

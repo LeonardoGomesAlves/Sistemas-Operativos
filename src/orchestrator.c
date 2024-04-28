@@ -96,15 +96,15 @@ int main (int argc, char* argv[]) {
     fcntl(pipe_available[1], F_SETFL, O_NONBLOCK); */
 
 
-    /* int pid_geral = fork();
+    int pid_geral = fork();
 
     if (pid_geral == -1) {
         perror("fork");
         return 1;
-    } */
+    }
 
     //filho
-    /* if (pid_geral == 0) {
+    if (pid_geral == 0) {
         //close(pipe_available[0]);
         //close(pipefd[1]);
         //write(pipe_available[1], AVAILABLE, strlen(AVAILABLE) + 1);
@@ -112,7 +112,7 @@ int main (int argc, char* argv[]) {
 
             Msg toExecute;
             //ssize_t bytes_read = read(pipefd[0], &toExecute, sizeof(Msg));
-            ssize_t bytes_read = read(fifos, &toExecute, sizeof(Msg));
+            ssize_t bytes_read = read(pipefd[0], &toExecute, sizeof(Msg));
 
             //filho
             if (bytes_read > 0) {
@@ -130,12 +130,12 @@ int main (int argc, char* argv[]) {
         close(fifos);
         //close(pipefd[0]);
         //close(pipe_available[1]);
-    } */
+    }
      
         //close(pipe_available[1]);
         //close(pipefd[0]);
         while(1) {
-            while ((bytes_read = read(fd_server, &toRead, sizeof(Msg))) > 0) {
+                if ((bytes_read = read(fd_server, &toRead, sizeof(Msg))) > 0) {
                 
                 //ENVIA MENSAGEM PARA O CLIENT
                 toRead.n_task = n_tasks++;
@@ -155,11 +155,13 @@ int main (int argc, char* argv[]) {
                 usleep(1000); //engana o read a continuar a ler para nao fazer sequencialmente
 
                 //write(fifos, &toRead, sizeof(toRead));
-                //write(pipefd[1], &fila->head->data, sizeof(Msg));
-                //deQueue(fila);
-                }
+                } else {
 
-                if (fila->head != NULL) {
+                write(pipefd[1], &fila->head->data, sizeof(Msg));
+                deQueue(fila);
+                //usleep(1000);
+
+                /* if (fila->head != NULL) {
                     if(fila->head->data.tipo == 0){
                         handleQueue(fila->head->data, argv[1]);
                     }
@@ -167,7 +169,9 @@ int main (int argc, char* argv[]) {
                         handleMultiple(fila->head->data,argv[1]);
                     } 
                     deQueue(fila);
+                } */
                 }
+
                 
                 /* char estado[2];
                 //read(pipe_available[0], estado, strlen(AVAILABLE) + 1);
@@ -179,7 +183,7 @@ int main (int argc, char* argv[]) {
   
         }        
         close(fifos);
-        //close(pipefd[1]);
+        close(pipefd[1]);
         //wait(NULL);
     
 
