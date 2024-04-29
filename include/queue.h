@@ -25,4 +25,8 @@ void handleQueue (Msg toExecute, char* server_output_info);
 
 void handleMultiple (Msg toExecute, char* server_output_info);
 
+int handleClientStatus(Msg toRead, char* in_execution, char* server_info, Queue* fila);
+
+int exec_task (Msg toExecute, char* in_execution, char* output_folder);
+
 #endif

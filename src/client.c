@@ -6,6 +6,7 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "gestorClient.h"
 
 #define SINGLE 0
@@ -14,14 +15,40 @@
 
 //Módulo para criação do client
 
+void print_erro() {
+    char* input_inv = malloc(100);
+    sprintf(input_inv, "Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
+    write(1,input_inv, strlen(input_inv));
+    free(input_inv);
+}
+
 int main (int argc, char* argv[]) {
 
     if(argc == 1) {
-        char* input_inv = malloc(100);
-        sprintf(input_inv, "Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
-        write(1,input_inv, sizeof(input_inv));
-        free(input_inv);
-        return 0;
+        print_erro();
+        return 1;
+    }
+
+    //argc == 2, porque o status é utilizado sem argumentos
+    if (strcmp(argv[1], "status") == 0 && argc == 2) {
+        char* input = malloc(strlen(argv[1]));
+        strcpy(input, argv[1]);
+        writeInPipe(input,STATUS);
+        free(input);
+        return 1;
+    } 
+
+    //se o argc == 2 apos o anterior, entao é invalido
+    if (argc == 2) {
+        print_erro();
+        return 1;
+    }
+
+    for (int i = 0; i < strlen(argv[2]); i++) {
+        if (!isdigit(argv[2][i])) {
+            print_erro();
+            return 1;
+        }
     }
 
     //execução de um comando
@@ -40,32 +67,16 @@ int main (int argc, char* argv[]) {
         }
 
         else {
-            char* input_inv = malloc(100);
-            sprintf(input_inv, "Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
-            write(1,input_inv, sizeof(input_inv));
-            free(input_inv);
-            return 0;
-        }       
-    
-    
+            print_erro();
+            free(input); 
+            return 1;
+        }      
+        free(input); 
     }
-
-    //argc == 2, porque o status é utilizado sem argumentos
-    else if (strcmp(argv[1], "status") == 0 && argc == 2) {
-        char* input = malloc(strlen(argv[1]));
-        strcpy(input, argv[1]);
-        writeInPipe(input,STATUS);
-        //printf("debug cliente\n");
-    
-    }
-
 
     else {
-        char* input_inv = malloc(100);
-        sprintf(input_inv, "Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
-        write(1,input_inv, sizeof(input_inv));
-        free(input_inv);
-        return 0;
+        print_erro();
+        return 1;
     }
 
     return 0;    

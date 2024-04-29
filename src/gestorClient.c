@@ -10,6 +10,7 @@
 #include "orchestrator.h"
 #include "pipe.h"
 #include "utilidades.h"
+#include "queue.h"
 
 
 
@@ -51,12 +52,13 @@ int writeInPipe (char* input,int tipo) {
     } 
 
     size_t bytes_read;
+    //APENAS DIZ QUE RECEBEU A QUERY
     if (tipo != 2) {
         Msg buffer;
         while ((bytes_read = read(fd_client, &buffer, sizeof(Msg))) > 0) {
             write(1, buffer.response, strlen(buffer.response));
         }  
-    } else {
+    } else { //TRATA DE IMPRIMIR NA CONSOLA O ./client status
         char buffer[4096];
         while((bytes_read = read(fd_client, &buffer, sizeof(buffer))) > 0);
         int fd_status = open("../tmp/status", O_RDONLY);
@@ -69,6 +71,22 @@ int writeInPipe (char* input,int tipo) {
         while((bytes_status = read(fd_status, status_buf, sizeof(status_buf))) > 0) {
             write(1, status_buf, bytes_status);
         }
+
+        int in_execution = open("../tmp/IN_EXECUTION", O_WRONLY | O_TRUNC);
+        if (in_execution == -1) {
+            perror("open");
+            return 1;
+        }
+
+        int len = snprintf(NULL, 0, "Executing\n");
+        char* to_execute_output = malloc(len + 1);
+        if (to_execute_output != NULL) {
+            sprintf(to_execute_output, "Executing\n");
+            write(in_execution, to_execute_output, len);
+            free(to_execute_output);
+        }
+
+        close(in_execution);
         close(fd_status);
     }
 

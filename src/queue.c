@@ -87,8 +87,6 @@ int exec_command(char* arg){
 
 
 void handleMultiple (Msg toExecute, char* server_output_info){
-    int status;
-
     Msg buf = toExecute;
 
     char copy[300];
@@ -112,7 +110,6 @@ void handleMultiple (Msg toExecute, char* server_output_info){
         return;
     }
 
-    int save_errors = dup(2);
     dup2(erros_out, 2);
     close(erros_out);
 
@@ -339,4 +336,115 @@ void handleQueue (Msg toExecute, char* server_output_info) {
     free(aux);
     free(fim_time);
     free(toWrite_output); 
+}
+
+int handleClientStatus(Msg toRead, char* in_execution, char* server_info, Queue* fila) {
+    char buffer[4096];
+    char buffer_complete[4096];
+
+    int status_info = open("../tmp/status", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (status_info == -1) {
+        perror("open");
+        return 1;
+    }
+    
+
+    int fd_client = open(toRead.pid_path, O_WRONLY);
+    if (fd_client == -1) {
+        perror("open");
+        return 1;
+    }
+
+    ssize_t reading;
+
+    //EM EXECUÇÃO
+    int server_execution = open(in_execution, O_RDONLY);
+    if (server_execution == -1) {
+        perror("open");
+        return 1;
+    }
+
+    while ((reading = read(server_execution, buffer, 4096)) > 0) {
+        write(status_info, buffer, reading);
+    }
+    close(server_execution);
+
+
+    char buffer_sc[12];
+    sprintf(buffer_sc, "\nScheduled\n");
+    write(status_info, buffer_sc, strlen(buffer_sc));
+    Node* save = fila->head;
+
+    while (save != NULL) {
+        int len = snprintf(NULL, 0, "%d %s\n", save->data.n_task, save->data.argumentos);
+        char* toWrite = malloc(len + 1);
+        if (toWrite != NULL) {
+            sprintf(toWrite, "%d %s\n", save->data.n_task, save->data.argumentos);
+            write(status_info, toWrite, len);
+            free(toWrite);
+        }
+        save = save->next;
+    }
+
+    //COMPLETADO
+
+    ssize_t reading_complete;
+    int server_complete = open(server_info, O_RDONLY);
+    if (server_complete == -1) {
+        perror("open");
+        return 1;
+    }
+    
+    while((reading_complete = read(server_complete, buffer_complete, 4096)) > 0) {
+        write(status_info, buffer_complete, reading_complete);
+    }
+
+    close(server_complete);
+    close(fd_client);
+    close(status_info);
+
+    return 0;
+}
+
+int exec_task (Msg toExecute, char* in_execution, char* output_folder) {
+    //EXECUTAR O CÓDIGO
+    int server_execution = open(in_execution, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (server_execution == -1) {
+        perror("open");
+        return 1;
+    }
+
+    int len = snprintf(NULL, 0, "Executing\n");
+    char* to_execute_output = malloc(len + 1);
+    if (to_execute_output != NULL) {
+        sprintf(to_execute_output, "Executing\n");
+        write(server_execution, to_execute_output, len);
+        free(to_execute_output);
+    }
+
+    //PARA O STATUS - ESCREVE QUE ESTÁ A EXECUTAR
+
+    int len2 = snprintf(NULL, 0, "%d %s\n", toExecute.n_task, toExecute.argumentos);
+    char* to_execute_output_s = malloc(len2 + 1);
+    if (to_execute_output_s != NULL) {
+        sprintf(to_execute_output_s, "%d %s\n", toExecute.n_task, toExecute.argumentos);
+        write(server_execution, to_execute_output_s, len2);
+        free(to_execute_output_s);
+    }
+
+    if(toExecute.tipo == 0){
+        handleQueue(toExecute, output_folder);
+    }
+    else{
+        handleMultiple(toExecute,output_folder);
+    }
+    close(server_execution);
+
+    
+    int available3 = open("../tmp/available", O_WRONLY | O_TRUNC);
+
+
+    close(available3);
+
+    return 0;
 }
