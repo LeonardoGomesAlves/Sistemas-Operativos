@@ -204,7 +204,7 @@ int main (int argc, char* argv[]) {
 
                     //SCHEDULED
                     //printf("%d\n", fila->tamanho);
-                    int server_scheduled = open("../tmp/scheduled", O_RDONLY);
+                    /* int server_scheduled = open("../tmp/scheduled", O_RDONLY);
                     if (server_scheduled == -1) {
                         perror("open");
                         return 1;
@@ -215,11 +215,29 @@ int main (int argc, char* argv[]) {
                     while((reading_scheduled = read(server_scheduled, buffer_scheduled, 4096)) > 0) {
                         write(status_info, buffer_scheduled, reading_scheduled);
                     }
-                    close(server_scheduled);
+                    close(server_scheduled); */
 
-                    ssize_t reading_complete;
+                    char buffer_sc[12];
+                    sprintf(buffer_sc, "\nScheduled\n");
+                    write(status_info, buffer_sc, strlen(buffer_sc));
+                    //if (fila->head != NULL) printf("%s\n",fila->head->data.argumentos);
+                    Node* save = fila->head;
+
+                    while (save != NULL) {
+                        //printf("%d\n", save->data.n_task);
+                        int len = snprintf(NULL, 0, "%d %s\n", save->data.n_task, save->data.argumentos);
+                        char* toWrite = malloc(len + 1);
+                        if (toWrite != NULL) {
+                            sprintf(toWrite, "%d %s\n", save->data.n_task, save->data.argumentos);
+                            write(status_info, toWrite, len);
+                            free(toWrite);
+                        }
+                        save = save->next;
+                    }
+
                     //COMPLETADO
 
+                    ssize_t reading_complete;
                     int server_complete = open(server_info, O_RDONLY);
                     if (server_complete == -1) {
                         perror("open");
@@ -275,7 +293,6 @@ int main (int argc, char* argv[]) {
                     }
                     if (filho == 0) {
                         //EXECUTAR O CÓDIGO
-                        printf("teste\n");
                         int server_execution = open(in_execution, O_WRONLY | O_CREAT | O_TRUNC, 0644);
                         if (server_execution == -1) {
                             perror("open");
