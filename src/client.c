@@ -12,12 +12,13 @@
 #define SINGLE 0
 #define MULTIPLE 1
 #define STATUS 2
+#define KILL 3
 
 //Módulo para criação do client
 
 void print_erro() {
     char* input_inv = malloc(100);
-    sprintf(input_inv, "Input inválido.\n./client status\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
+    sprintf(input_inv, "Input inválido.\n./client status\n./client kill\n./client execute 100 (-u/-p) ''prog-a arg-1 (...) arg-n''\n");
     write(1,input_inv, strlen(input_inv));
     free(input_inv);
 }
@@ -33,10 +34,19 @@ int main (int argc, char* argv[]) {
     if (strcmp(argv[1], "status") == 0 && argc == 2) {
         char* input = malloc(strlen(argv[1]));
         strcpy(input, argv[1]);
-        writeInPipe(input,STATUS);
+        writeInPipe(input,STATUS,0);
         free(input);
         return 1;
     } 
+
+    //responsavel por terminar o programa
+    if (strcmp(argv[1], "kill") == 0 && argc == 2) {
+        char* input = malloc(strlen(argv[1]));
+        strcpy(input, argv[1]);
+        writeInPipe(input,KILL,0);
+        free(input);
+        return 1;
+    }
 
     //se o argc == 2 apos o anterior, entao é invalido
     if (argc == 2) {
@@ -59,11 +69,11 @@ int main (int argc, char* argv[]) {
     
         //um unico processo
         if (strcmp(argv[3], "-u") == 0) {    
-            writeInPipe(input,SINGLE);
+            writeInPipe(input,SINGLE,atoi(argv[2]));
         }
         //varios processos
         else if (strcmp(argv[3], "-p") == 0) {
-            writeInPipe(input,MULTIPLE);
+            writeInPipe(input,MULTIPLE,atoi(argv[2]));
         }
 
         else {

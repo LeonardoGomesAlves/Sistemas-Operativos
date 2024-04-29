@@ -14,7 +14,7 @@
 
 
 
-int writeInPipe (char* input,int tipo) {
+int writeInPipe (char* input, int tipo, int tempo) {
 
     int fd_server, fd_client;
 
@@ -34,6 +34,7 @@ int writeInPipe (char* input,int tipo) {
     Msg toPipe;
 
     toPipe.tipo = tipo;
+    toPipe.tempo = tempo;
 
     strcpy(toPipe.argumentos, input);
 
@@ -45,20 +46,24 @@ int writeInPipe (char* input,int tipo) {
 
     //LÊ O OUTPUT QUE SERÁ ENVIADO PELO SERVER PARA O CLIENT
     //O FD_CLIENT TEM QUE SER ABERTO AQUI!!
-    fd_client = open(fd_client_path, O_RDONLY);
-    if (fd_client == -1) {
-        perror("open");
-        return -1;
-    } 
+
+    if (tipo != 3) {
+        fd_client = open(fd_client_path, O_RDONLY);
+        if (fd_client == -1) {
+            perror("open");
+            return -1;
+        } 
+    }
+
 
     size_t bytes_read;
     //APENAS DIZ QUE RECEBEU A QUERY
-    if (tipo != 2) {
+    if (tipo == 0 || tipo == 1) {
         Msg buffer;
         while ((bytes_read = read(fd_client, &buffer, sizeof(Msg))) > 0) {
             write(1, buffer.response, strlen(buffer.response));
         }  
-    } else { //TRATA DE IMPRIMIR NA CONSOLA O ./client status
+    } else if (tipo == 2) { //TRATA DE IMPRIMIR NA CONSOLA O ./client status
         char buffer[4096];
         while((bytes_read = read(fd_client, &buffer, sizeof(buffer))) > 0);
         int fd_status = open("../tmp/status", O_RDONLY);

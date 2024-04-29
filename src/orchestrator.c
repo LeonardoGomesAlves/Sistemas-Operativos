@@ -17,10 +17,23 @@
 
 int main (int argc, char* argv[]) {
 
-    //EXEMPLO DE UTILIZAÇÃO: ./orchestrator ../<nome_da_pasta_deseja>/
-    if (argc != 2) {
+    //EXEMPLO DE UTILIZAÇÃO: ./orchestrator ../<nome_da_pasta_deseja>/ <numero de paralel tasks> <FCFS ou SJF>
+    if (argc != 4) {
         perror("argc");
         return 1;
+    }
+
+    if (strcmp("FCFS", argv[3]) != 0 && strcmp("SJF", argv[3]) != 0) {
+        perror("FCFS ou SJF");
+        return 1;
+    }
+
+    int algoritmo;
+
+    if (strcmp("FCFS", argv[3]) == 0) {
+        algoritmo = 0;
+    } else {
+        algoritmo = 1;
     }
 
     //criar o pipe do server
@@ -98,6 +111,8 @@ int main (int argc, char* argv[]) {
 
                 handleClientStatus(toRead, in_execution, server_info, fila);
 
+            } else if (toRead.tipo == 3){
+                return 1;
             } else {
                 //ENVIA MENSAGEM PARA O CLIENT
                 toRead.n_task = n_tasks++;
@@ -112,7 +127,11 @@ int main (int argc, char* argv[]) {
                 write(fd_client, &toRead, sizeof(toRead));
                 close(fd_client);
 
-                enQueue(fila, toRead);                        
+                if (algoritmo == 0) {
+                    enQueue(fila, toRead);
+                } else {
+                    enQueueSJF(fila, toRead);
+                }                                       
             }
         }
 

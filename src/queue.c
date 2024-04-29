@@ -37,6 +37,42 @@ void enQueue (Queue* fila, Msg toInsert) {
     
 }
 
+void enQueueSJF (Queue* fila, Msg toInsert) {
+    Node* newNode = malloc(sizeof(Node));
+    if (!newNode) {
+        perror("malloc");
+        return;
+    }
+    newNode->data = toInsert;
+    newNode->next = NULL;
+
+    Node *current = fila->head;
+    Node *prev = NULL;
+
+    if (fila->head == NULL || newNode->data.tempo < fila->head->data.tempo) {
+        newNode->next = fila->head;
+        fila->head = newNode;
+
+        if (fila->tail == NULL) {
+            fila->tail = newNode;
+        }
+    } else {
+        while (current != NULL && current->data.tempo <= newNode->data.tempo) {
+            prev = current;
+            current = current->next;
+        }
+
+        prev->next = newNode;
+        newNode->next = current;
+
+        if (current == NULL) {
+            fila->tail = newNode;
+        }
+    }
+
+    fila->tamanho++;
+}
+
 void deQueue (Queue* fila) {
     //fila vazia
     if (fila->head != NULL) {

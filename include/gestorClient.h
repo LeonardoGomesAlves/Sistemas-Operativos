@@ -8,8 +8,9 @@ typedef struct msg {
     char pid_path[30];
     char response[25];
     int n_task;
+    int tempo;
 } Msg;
 
-int writeInPipe (char* input,int tipo);
+int writeInPipe (char* input, int tipo, int tempo);
 
 #endif

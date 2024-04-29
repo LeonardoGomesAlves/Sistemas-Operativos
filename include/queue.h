@@ -17,6 +17,8 @@ void newQueue (Queue* aux);
 
 void enQueue (Queue* fila, Msg toInsert);
 
+void enQueueSJF (Queue* fila, Msg toInsert);
+
 void deQueue (Queue* fila);
 
 void printQueue (Queue* fila);
