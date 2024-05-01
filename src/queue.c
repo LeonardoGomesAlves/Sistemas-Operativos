@@ -374,7 +374,7 @@ void handleQueue (Msg toExecute, char* server_output_info) {
     free(toWrite_output); 
 }
 
-int handleClientStatus(Msg toRead, char* in_execution, char* server_info, Queue* fila) {
+int handleClientStatus(Msg toRead, int paralel_tasks, char* server_info, Queue* fila) {
     char buffer[4096];
     char buffer_complete[4096];
 
@@ -394,18 +394,30 @@ int handleClientStatus(Msg toRead, char* in_execution, char* server_info, Queue*
     ssize_t reading;
 
     //EM EXECUÇÃO
-    int server_execution = open(in_execution, O_RDONLY);
-    if (server_execution == -1) {
-        perror("open");
-        return 1;
+    char* executing_info = malloc(strlen("Executing\n") + 1);
+    sprintf(executing_info, "Executing\n");
+    write(status_info, executing_info, strlen(executing_info) + 1);
+    free(executing_info);
+
+    for (int i = 0; i < paralel_tasks; i++) {
+        char* iterator = malloc(strlen("../tmp/IN_EXECUTION") + 5);
+        sprintf(iterator, "../tmp/IN_EXECUTION%d", i);
+
+        int descp_current_paralel = open(iterator, O_RDONLY);
+        if (descp_current_paralel == -1) {
+            perror("open");
+            return 1;
+        }
+        char buf[350];
+        ssize_t bytes_read;
+        if ((bytes_read = read(descp_current_paralel, &buf, sizeof(buf))) > 0) {
+            write(status_info, buf, bytes_read);
+        }
+        free(iterator);
+        close(descp_current_paralel);
     }
 
-    while ((reading = read(server_execution, buffer, 4096)) > 0) {
-        write(status_info, buffer, reading);
-    }
-    close(server_execution);
-
-
+    //SCHEDULED
     char buffer_sc[12];
     sprintf(buffer_sc, "\nScheduled\n");
     write(status_info, buffer_sc, strlen(buffer_sc));
@@ -442,20 +454,15 @@ int handleClientStatus(Msg toRead, char* in_execution, char* server_info, Queue*
     return 0;
 }
 
-int exec_task (Msg toExecute, char* in_execution, char* output_folder) {
+int exec_task (Msg toExecute, int in_execution_id, char* output_folder, char* process) {
     //EXECUTAR O CÓDIGO
+    char* in_execution = malloc(strlen("../tmp/IN_EXECUTION") + 5);
+    sprintf(in_execution, "../tmp/IN_EXECUTION%d", in_execution_id);
+
     int server_execution = open(in_execution, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (server_execution == -1) {
         perror("open");
         return 1;
-    }
-
-    int len = snprintf(NULL, 0, "Executing\n");
-    char* to_execute_output = malloc(len + 1);
-    if (to_execute_output != NULL) {
-        sprintf(to_execute_output, "Executing\n");
-        write(server_execution, to_execute_output, len);
-        free(to_execute_output);
     }
 
     //PARA O STATUS - ESCREVE QUE ESTÁ A EXECUTAR
@@ -474,10 +481,13 @@ int exec_task (Msg toExecute, char* in_execution, char* output_folder) {
     else{
         handleMultiple(toExecute,output_folder);
     }
+      
     close(server_execution);
 
+    int truncate = open(in_execution, O_TRUNC);
+    close(truncate);
     
-    int available3 = open("../tmp/available", O_WRONLY | O_TRUNC);
+    int available3 = open(process, O_WRONLY | O_TRUNC);
 
 
     close(available3);

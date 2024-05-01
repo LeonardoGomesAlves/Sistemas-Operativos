@@ -28,6 +28,10 @@ int main (int argc, char* argv[]) {
         return 1;
     }
 
+    //falta a verificação do argv[2]
+    int paralel_tasks = atoi(argv[2]);
+
+
     int algoritmo;
 
     if (strcmp("FCFS", argv[3]) == 0) {
@@ -76,22 +80,17 @@ int main (int argc, char* argv[]) {
         free(completed);
     }
 
-    //criação do ficheiro das queries em execução
-    char* in_execution = malloc(strlen("../tmp/IN_EXECUTION") + 1);
-    sprintf(in_execution, "../tmp/IN_EXECUTION");
+    for (int i = 0; i < paralel_tasks; i++) {
+        char* in_execution = malloc(strlen("../tmp/IN_EXECUTION") + 4);
+        sprintf(in_execution, "../tmp/IN_EXECUTION%d", i);
 
-    int server_in_execution = open(in_execution, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if (server_in_execution == -1) {
-        perror("open");
-        return 1;
-    }
+        int server_in_execution = open(in_execution, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (server_in_execution == -1) {
+            perror("open");
+            return 1;
+        }
 
-    int len3 = snprintf(NULL, 0, "Executing\n");
-    char* completed_2 = malloc(len3 + 1);
-    if (completed_2 != NULL) {
-        sprintf(completed_2, "Executing\n");
-        write(server_in_execution, completed_2, len3);
-        free(completed_2);
+        close(server_in_execution);
     }
 
     int n_tasks = 1;
@@ -99,19 +98,22 @@ int main (int argc, char* argv[]) {
     Queue* fila = malloc(sizeof(Queue));
     newQueue(fila);
     
-    int count = 0;
+    for (int i = 0; i < paralel_tasks; i++) {
+        char* to_open = malloc(strlen("../tmp/available") + 4);
+        sprintf(to_open, "../tmp/available%d", i);
+        int available = open(to_open, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        close(available);
+    }
 
-    int available = open("../tmp/available", O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    close(available);
 
     while(1) {
         while ((bytes_read = read(fd_server, &toRead, sizeof(Msg))) > 0) {
             //SE O REQUEST FOR UM STATUS
             if (toRead.tipo == 2) {
 
-                handleClientStatus(toRead, in_execution, server_info, fila);
+                handleClientStatus(toRead, paralel_tasks, server_info, fila);
 
-            } else if (toRead.tipo == 3){
+            } else if (toRead.tipo == 3){ //mata o server
                 return 1;
             } else {
                 //ENVIA MENSAGEM PARA O CLIENT
@@ -135,41 +137,56 @@ int main (int argc, char* argv[]) {
             }
         }
 
-        int available2 = open("../tmp/available", O_RDWR);
+        int to_read_desc;
+        int reader;
+        char* to_read;
 
+        int i;
+        for (i = 0; i < paralel_tasks; i++) {
+            to_read = malloc(strlen("../tmp/available") + 4);
+            sprintf(to_read, "../tmp/available%d", i);
+            //printf("%s\n", to_read);
+            to_read_desc = open(to_read, O_RDWR);
+            if (to_read_desc == -1){
+                perror("open");
+                return 1;
+            }
+            char buf_temp[10];
+            reader = read(to_read_desc, &buf_temp, sizeof(buf_temp));
+            if (reader == 0) break;
+            else close(to_read_desc);
+        }
 
-        char buf[10];
-        count = read(available2, &buf, sizeof(buf));
         
-        //disponivel
-        if (count == 0) {
-            if (fila->head != NULL) {
-                count++;
-                char* towrite = malloc(strlen("n")+1);
-                strcpy(towrite, "n");
-                write(available2, towrite, strlen(towrite) + 1);
-        
+        if (reader == 0 && fila->head != NULL) {
+            char* towrite = malloc(strlen("n")+1);
+            strcpy(towrite, "n");
+            write(to_read_desc, towrite, strlen(towrite) + 1);
+            free(towrite);
+            close(to_read_desc);
+            
+            Msg toExecute = fila->head->data;
+
+            int filho = fork();
+            if (filho == -1) {
+                perror("fork");
+                return 1;
+            }
+
+            if (filho == 0) {
+                exec_task(toExecute, i, argv[1], to_read);
+                free(to_read);                   
                 
-                Msg toExecute = fila->head->data;
-
-                int filho = fork();
-                if (filho == -1) {
-                    perror("fork");
-                    return 1;
-                }
-
-                if (filho == 0) {
-                    close(available2);
-
-                    exec_task(toExecute, in_execution, argv[1]);                    
-                    
-                    _exit(0);
-                } else {
-                    deQueue(fila);
-                }
+                _exit(0);
+            } else {
+                deQueue(fila);
             }
         }
-        close(available2);          
+        else {
+            close(to_read_desc);
+            free(to_read);
+        }
+        //close(available2);          
     }       
         close(fd_server);
         close(server_output_info);
