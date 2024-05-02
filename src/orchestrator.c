@@ -12,24 +12,43 @@
 #include "orchestrator.h"
 #include <stdlib.h>
 #include "queue.h"
+#include <ctype.h>
 
 // Módulo para criação do servidor
+
+void print_erro() {
+    char* input_inv = malloc(100);
+    sprintf(input_inv, "Input inválido.\n./orchestrator ../<nome_da_pasta_deseja>/ <numero de paralel tasks> <FCFS ou SJF>\n");
+    write(1,input_inv, strlen(input_inv));
+    free(input_inv);
+}
 
 int main (int argc, char* argv[]) {
 
     //EXEMPLO DE UTILIZAÇÃO: ./orchestrator ../<nome_da_pasta_deseja>/ <numero de paralel tasks> <FCFS ou SJF>
     if (argc != 4) {
-        perror("argc");
+        print_erro();
         return 1;
     }
 
     if (strcmp("FCFS", argv[3]) != 0 && strcmp("SJF", argv[3]) != 0) {
-        perror("FCFS ou SJF");
+        print_erro();
         return 1;
+    }
+
+    for (int i = 0; i < strlen(argv[2]); i++) {
+        if (!isdigit(argv[2][i])) {
+            print_erro();
+            return 1;
+        }
     }
 
     //falta a verificação do argv[2]
     int paralel_tasks = atoi(argv[2]);
+    if (paralel_tasks <= 0) {
+        print_erro();
+        return 1;
+    }
 
 
     int algoritmo;

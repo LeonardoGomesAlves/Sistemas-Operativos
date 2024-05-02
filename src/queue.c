@@ -375,7 +375,6 @@ void handleQueue (Msg toExecute, char* server_output_info) {
 }
 
 int handleClientStatus(Msg toRead, int paralel_tasks, char* server_info, Queue* fila) {
-    char buffer[4096];
     char buffer_complete[4096];
 
     int status_info = open("../tmp/status", O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -390,8 +389,6 @@ int handleClientStatus(Msg toRead, int paralel_tasks, char* server_info, Queue* 
         perror("open");
         return 1;
     }
-
-    ssize_t reading;
 
     //EM EXECUÇÃO
     char* executing_info = malloc(strlen("Executing\n") + 1);
