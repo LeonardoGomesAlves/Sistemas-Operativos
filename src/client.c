@@ -39,7 +39,7 @@ int main (int argc, char* argv[]) {
         return 1;
     } 
 
-    //responsavel por terminar o programa
+    //responsavel por terminar o servidor
     if (strcmp(argv[1], "kill") == 0 && argc == 2) {
         char* input = malloc(strlen(argv[1]));
         strcpy(input, argv[1]);

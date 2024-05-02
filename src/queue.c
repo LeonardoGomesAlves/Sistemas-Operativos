@@ -9,12 +9,14 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+//cria uma nova queue
 void newQueue (Queue* aux) {
     aux->head = NULL;
     aux->tail = NULL;
 }
 
-void enQueue (Queue* fila, Msg toInsert) {
+//dá enqueue utilizando FCFS
+void enQueueFCFS (Queue* fila, Msg toInsert) {
     Node* newNode = malloc(sizeof(Node));
     if (!newNode) {
         perror("malloc");
@@ -37,6 +39,7 @@ void enQueue (Queue* fila, Msg toInsert) {
     
 }
 
+//dá enqueue utilizando SJF
 void enQueueSJF (Queue* fila, Msg toInsert) {
     Node* newNode = malloc(sizeof(Node));
     if (!newNode) {
@@ -73,6 +76,7 @@ void enQueueSJF (Queue* fila, Msg toInsert) {
     fila->tamanho++;
 }
 
+//dá dequeue
 void deQueue (Queue* fila) {
     //fila vazia
     if (fila->head != NULL) {
@@ -86,15 +90,7 @@ void deQueue (Queue* fila) {
     }  
 }
 
-void printQueue (Queue* fila) {
-    Node* atual = fila->head;
-    while(atual != NULL) {
-        printf("%s\n", atual->data.argumentos);
-        atual = atual->next;
-    }
-}
-
-
+//executa um comando do pipeline
 int exec_command(char* arg){
 
 	//Estamos a assumir numero maximo de argumentos
@@ -122,7 +118,7 @@ int exec_command(char* arg){
 }
 
 
-void handleMultiple (Msg toExecute, char* server_output_info){
+void executePipeline (Msg toExecute, char* server_output_info){
     Msg buf = toExecute;
 
     char copy[300];
@@ -237,7 +233,7 @@ void handleMultiple (Msg toExecute, char* server_output_info){
 }
 
 
-void handleQueue (Msg toExecute, char* server_output_info) {
+void executeSingle (Msg toExecute, char* server_output_info) {
     int status;
 
     Msg buf = toExecute;
@@ -419,10 +415,10 @@ int exec_task (Msg toExecute, int in_execution_id, char* output_folder, char* pr
     }
 
     if(toExecute.tipo == 0){
-        handleQueue(toExecute, output_folder);
+        executeSingle(toExecute, output_folder);
     }
     else{
-        handleMultiple(toExecute,output_folder);
+        executePipeline(toExecute,output_folder);
     }
       
     close(server_execution);

@@ -15,7 +15,7 @@ typedef struct queue {
 
 void newQueue (Queue* aux);
 
-void enQueue (Queue* fila, Msg toInsert);
+void enQueueFCFS (Queue* fila, Msg toInsert);
 
 void enQueueSJF (Queue* fila, Msg toInsert);
 
@@ -23,9 +23,9 @@ void deQueue (Queue* fila);
 
 void printQueue (Queue* fila);
 
-void handleQueue (Msg toExecute, char* server_output_info);
+void executeSingle (Msg toExecute, char* server_output_info);
 
-void handleMultiple (Msg toExecute, char* server_output_info);
+void executePipeline (Msg toExecute, char* server_output_info);
 
 int handleClientStatus(Msg toRead, int paralel_tasks, char* server_info, Queue* fila);
 

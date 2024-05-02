@@ -30,7 +30,7 @@ int writeInPipe (char* input, int tipo, int tempo) {
     int pid = getpid();
     char* fd_client_path = createFifo(pid);
        
-    //INSERIR NA STRUCT MSG PARA ENVIAR PARA O PIPE 
+    //INSERIR NA STRUCT MSG O QUE QUER EXECUTAR PARA ENVIAR PARA O PIPE DO SERVER
     Msg toPipe;
 
     toPipe.tipo = tipo;
@@ -45,8 +45,7 @@ int writeInPipe (char* input, int tipo, int tempo) {
     close(fd_server);
 
     //LÊ O OUTPUT QUE SERÁ ENVIADO PELO SERVER PARA O CLIENT
-    //O FD_CLIENT TEM QUE SER ABERTO AQUI!!
-
+    //SÓ FAZ ISTO SE FOR UM COMANDO DIFERENTE DE ./client kill
     if (tipo != 3) {
         fd_client = open(fd_client_path, O_RDONLY);
         if (fd_client == -1) {
@@ -57,7 +56,7 @@ int writeInPipe (char* input, int tipo, int tempo) {
 
 
     size_t bytes_read;
-    //APENAS DIZ QUE RECEBEU A QUERY
+    //APENAS DIZ QUE RECEBEU A QUERY (TASK RECEIVED)
     if (tipo == 0 || tipo == 1) {
         Msg buffer;
         while ((bytes_read = read(fd_client, &buffer, sizeof(Msg))) > 0) {

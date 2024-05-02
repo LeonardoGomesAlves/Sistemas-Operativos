@@ -7,7 +7,6 @@
 char* createFifo (int pid) {
 
     char fifo_name[30];
-    //nao sei se pudemos usar este sprintf
     sprintf(fifo_name, "../tmp/CLIENT_%d", pid);
     
     if (mkfifo(fifo_name, 0666) == -1) {
