@@ -128,40 +128,26 @@ void handleMultiple (Msg toExecute, char* server_output_info){
     char copy[300];
     strcpy(copy, toExecute.argumentos);
     
-    struct timeval* inicio_time = malloc(sizeof(struct timeval*));
-    struct timezone* zona = NULL;
-    int verifytime = gettimeofday(inicio_time, zona);
-    if (verifytime == -1) {
-        perror("gettimeofday");
-        return;
-    }
+    struct timeval inicio_time, fim_time;
+    gettimeofday(&inicio_time, NULL); //primeiro tempo
 
-        //FICHEIRO DE ERROS
+    //FICHEIRO DE OUTPUT
     char* erros = malloc(strlen(server_output_info) + 15);
-    sprintf(erros, "%sTASK%d_ERRORS", server_output_info, buf.n_task);
+    sprintf(erros, "%sTASK%d_OUTPUT", server_output_info, buf.n_task);
     
-    int erros_out = open(erros, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if(erros_out == -1){
+    int output_fd = open(erros, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if(output_fd == -1){
         perror("open");
         return;
     }
 
-    dup2(erros_out, 2);
-    close(erros_out);
+    dup2(output_fd, 2);
+    dup2(output_fd, 1);
 
     char** commands = malloc(300);
     int n_commands = separa_argumentos(commands, buf.argumentos,buf.tipo);
-    char* aux = malloc(strlen(server_output_info) + 15);
     int pipes[n_commands-1][2];
     int pids[n_commands];
-
-    int stdout = dup(1);
-    sprintf(aux, "%sTASK%d_OUTPUT", server_output_info, buf.n_task);
-    int file_out = open(aux, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if(file_out == -1){
-        perror("open");
-        _exit(-1);
-    }
 
 
     for (int i = 0; i < n_commands - 1; i++) {
@@ -192,7 +178,7 @@ void handleMultiple (Msg toExecute, char* server_output_info){
 
 			if (i == n_commands-1) {
 				dup2(pipes[i-1][0], STDIN_FILENO);
-                dup2(file_out,STDOUT_FILENO);
+                dup2(output_fd,STDOUT_FILENO);
 			}
 
 			for (int j = 0; j < n_commands - 1; j++) {
@@ -203,12 +189,14 @@ void handleMultiple (Msg toExecute, char* server_output_info){
 			//verificação de 
 			for (int j = 0; j < n_commands; j++) {
 				if (i == j) {
-					exec_command(commands[i]);
+					if (exec_command(commands[i]) == -1) {
+                        perror("execvp");
+                        return;
+                    }
 				}
 			}
 
-            close(file_out);
-            close(erros_out);
+            close(output_fd);
 
 		}
 	}
@@ -221,18 +209,11 @@ void handleMultiple (Msg toExecute, char* server_output_info){
 
 	for (int i = 0; i < n_commands; i++) {
 		 waitpid(pids[i], NULL, 0);
-		//printf("%d\n", k);
 	}
-
-     //tempo final e escrita no ficheiro
-    struct timeval* fim_time = malloc(sizeof(struct timeval*));
-    //struct timezone* zona2 = NULL;
     
-    int verifytime2 = gettimeofday(fim_time, zona);
-    if (verifytime2 == -1) {
-        perror("gettimeofday");
-        return;
-    }
+
+    gettimeofday(&fim_time, NULL);
+    
 
     int server_output_inf = open("../tmp/SERVER_INFO", O_WRONLY | O_APPEND | O_CREAT, 0644);
     if (server_output_inf == -1) {
@@ -240,25 +221,18 @@ void handleMultiple (Msg toExecute, char* server_output_info){
         return;
     }
 
+    long tempo_execucao = ((fim_time.tv_sec * 1000000 + fim_time.tv_usec) - (inicio_time.tv_sec * 1000000 + inicio_time.tv_usec)) / 1000;
 
-    //O TEMPO DISTO ESTÁ ABSURDAMENTE BAIXO, ficou em microsegundos mas parece milisegundos comparando com o single execution
-    suseconds_t tempomicrosegundos = fim_time->tv_usec - inicio_time->tv_usec;
-    //printf("%ld %ld\n", fim_time->tv_usec, inicio_time->tv_usec);
-    /* if (tempomicrosegundos < 0) {
-        tempomicrosegundos += 1000000;
-    } */
-    int len = snprintf(NULL, 0, "%d %s %ld ms\n", buf.n_task, copy, tempomicrosegundos);
+    int len = snprintf(NULL, 0, "%d %s %ld ms\n", buf.n_task, copy, tempo_execucao);
     char *toWrite_output = malloc(len + 1);
     if (toWrite_output != NULL) {
-        sprintf(toWrite_output, "%d %s %ld ms\n", buf.n_task, copy, tempomicrosegundos);
+        sprintf(toWrite_output, "%d %s %ld ms\n", buf.n_task, copy, tempo_execucao);
         write(server_output_inf, toWrite_output, len);
     }
 
-    close(file_out);
     close(server_output_inf);
 
 	return;
-
 
 }
 
@@ -271,26 +245,21 @@ void handleQueue (Msg toExecute, char* server_output_info) {
     char copy[300];
     strcpy(copy, buf.argumentos);
 
-    struct timeval* inicio_time = malloc(sizeof(struct timeval*));
-    struct timezone* zona = NULL;
-    int verifytime = gettimeofday(inicio_time, zona);
-    if (verifytime == -1) {
-        perror("gettimeofday");
-        return;
-    }
+    struct timeval inicio_time, fim_time;
+    gettimeofday(&inicio_time, NULL);
 
     //FICHEIRO DE ERROS
-    char* erros = malloc(strlen(server_output_info) + 15);
-    sprintf(erros, "%sTASK%d_ERRORS", server_output_info, buf.n_task);
+    char* output = malloc(strlen(server_output_info) + 15);
+    sprintf(output, "%sTASK%d_OUTPUT", server_output_info, buf.n_task);
     
-    int erros_out = open(erros, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-    if(erros_out == -1){
+    int output_descritor = open(output, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if(output_descritor == -1){
         perror("open");
         return;
     }
 
     int save_errors = dup(2);
-    dup2(erros_out, 2);
+    dup2(output_descritor, 2);
 
     char** commands = malloc(300);
     separa_argumentos(commands, buf.argumentos,buf.tipo);
@@ -303,17 +272,8 @@ void handleQueue (Msg toExecute, char* server_output_info) {
         return;
 
     } else if (filho_pid == 0) {
-        //CRIAR O FICHEIRO DE OUTPUT
-        int stdout = dup(1);
-        sprintf(aux, "%sTASK%d_OUTPUT", server_output_info, buf.n_task);
 
-        int file_out = open(aux, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-        if(file_out == -1){
-            perror("open");
-            _exit(-1);
-        }
-        
-        dup2(file_out, 1);
+        dup2(output_descritor, 1);
 
         //EXECUÇÃO DO COMANDO DO USER
         if(execvp(commands[0],commands) == -1) 
@@ -322,9 +282,7 @@ void handleQueue (Msg toExecute, char* server_output_info) {
             return;
         }
 
-        close(file_out);
-        close(erros_out);
-        dup2(stdout, 1);
+        close(output_descritor);
         _exit(0);
     }
 
@@ -332,15 +290,9 @@ void handleQueue (Msg toExecute, char* server_output_info) {
         waitpid(filho_pid, &status, 0);
     }
 
-    //tempo final e escrita no ficheiro
-    struct timeval* fim_time = malloc(sizeof(struct timeval*));
-    //struct timezone* zona2 = NULL;
     
-    int verifytime2 = gettimeofday(fim_time, zona);
-    if (verifytime2 == -1) {
-        perror("gettimeofday");
-        return;
-    }
+    gettimeofday(&fim_time, NULL);
+    
 
     int server_output_inf = open("../tmp/SERVER_INFO", O_WRONLY | O_APPEND | O_CREAT, 0644);
     if (server_output_inf == -1) {
@@ -348,29 +300,23 @@ void handleQueue (Msg toExecute, char* server_output_info) {
         return;
     }
 
+    long tempo_execucao = ((fim_time.tv_sec * 1000000 + fim_time.tv_usec) - (inicio_time.tv_sec * 1000000 + inicio_time.tv_usec)) / 1000;
 
-    suseconds_t tempomicrosegundos = fim_time->tv_usec - inicio_time->tv_usec;
-    if (tempomicrosegundos < 0) {
-        tempomicrosegundos += 1000000;
-    }
-    tempomicrosegundos = tempomicrosegundos / 1000;
-    int len = snprintf(NULL, 0, "%d %s %ld ms\n", buf.n_task, copy, tempomicrosegundos);
+    
+    int len = snprintf(NULL, 0, "%d %s %ld ms\n", buf.n_task, copy, tempo_execucao);
     char *toWrite_output = malloc(len + 1);
     if (toWrite_output != NULL) {
-        sprintf(toWrite_output, "%d %s %ld ms\n", buf.n_task, copy, tempomicrosegundos);
+        sprintf(toWrite_output, "%d %s %ld ms\n", buf.n_task, copy, tempo_execucao);
         write(server_output_inf, toWrite_output, len);
     }
 
     close(server_output_inf);
-    close(erros_out);
+    close(output_descritor);
     dup2(save_errors, 2);
     //n_tasks++;
 
-    free(erros);
-    free(inicio_time);
     free(commands);
     free(aux);
-    free(fim_time);
     free(toWrite_output); 
 }
 
