@@ -128,10 +128,10 @@ void executePipeline (Msg toExecute, char* server_output_info){
     gettimeofday(&inicio_time, NULL); //primeiro tempo
 
     //FICHEIRO DE OUTPUT
-    char* erros = malloc(strlen(server_output_info) + 15);
-    sprintf(erros, "%sTASK%d_OUTPUT", server_output_info, buf.n_task);
+    char* output_ref = malloc(strlen(server_output_info) + 15);
+    sprintf(output_ref, "%sTASK%d_OUTPUT", server_output_info, buf.n_task);
     
-    int output_fd = open(erros, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    int output_fd = open(output_ref, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if(output_fd == -1){
         perror("open");
         return;
@@ -226,6 +226,7 @@ void executePipeline (Msg toExecute, char* server_output_info){
         write(server_output_inf, toWrite_output, len);
     }
 
+    free(output_ref);
     close(server_output_inf);
 
 	return;
