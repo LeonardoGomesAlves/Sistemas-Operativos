@@ -83,6 +83,10 @@ int main (int argc, char* argv[]) {
         return 1;
     }
 
+    //utilizado para calcular os tempos de execução e de espera dos processos
+    /* int ss = open("../tmp/TEMPO_TOTAL", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    close(ss); */
+
     //criação do ficheiro para guardar as queries que já executou
     char* server_info = malloc(strlen("../tmp/SERVER_INFO") + 1);
     sprintf(server_info, "../tmp/SERVER_INFO");
@@ -132,9 +136,25 @@ int main (int argc, char* argv[]) {
         close(available);
     }
 
+    //utilizado para calcular os tempos de execução e de espera dos processos
+    /* struct timeval inicio_time, fim_time;
+
+    int stat = 1;
+    int total = 300; */
 
     while(1) {
         while ((bytes_read = read(fd_server, &toRead, sizeof(Msg))) > 0) {
+           
+           //utilizado para calcular os tempos de execução e de espera dos processos
+            /* if (stat == 1) {
+                gettimeofday(&inicio_time, NULL);
+                stat = 0;
+            }
+            
+            struct timeval tempo;
+            gettimeofday(&tempo, NULL);
+            toRead.tempo_inicial = tempo; */
+                
             //SE O REQUEST FOR UM CLIENT STATUS
             if (toRead.tipo == 2) {
 
@@ -171,6 +191,14 @@ int main (int argc, char* argv[]) {
                 }                                       
             }
         }
+
+        //utilizado para calcular os tempos de execução e de espera dos processos
+        /* if (total == 0) {
+            gettimeofday(&fim_time, NULL);
+            double total_time = (double)((fim_time.tv_sec - inicio_time.tv_sec) + (fim_time.tv_usec - inicio_time.tv_usec) / 1000000.0);
+            printf("tempo: %.6f\n", total_time);
+            total--;
+        } */
 
         int to_read_desc;
         int reader;
@@ -217,6 +245,8 @@ int main (int argc, char* argv[]) {
                 free(to_read);                   
                 _exit(0);
             } else {
+                //utilizado para calcular os tempos de execução e de espera dos processos
+                /* total--; */
                 deQueue(fila);
             }
         }
