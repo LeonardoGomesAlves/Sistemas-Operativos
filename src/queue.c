@@ -124,8 +124,9 @@ void executePipeline (Msg toExecute, char* server_output_info){
     char copy[300];
     strcpy(copy, toExecute.argumentos);
     
-    struct timeval inicio_time, fim_time;
-    gettimeofday(&inicio_time, NULL); //primeiro tempo
+    struct timeval fim_time; //inicio_time;
+
+    //gettimeofday(&inicio_time, NULL); //primeiro tempo
 
     //FICHEIRO DE OUTPUT
     char* output_ref = malloc(strlen(server_output_info) + 15);
@@ -217,7 +218,7 @@ void executePipeline (Msg toExecute, char* server_output_info){
         return;
     }
 
-    long tempo_execucao = ((fim_time.tv_sec * 1000000 + fim_time.tv_usec) - (inicio_time.tv_sec * 1000000 + inicio_time.tv_usec)) / 1000;
+    long tempo_execucao = ((fim_time.tv_sec * 1000000 + fim_time.tv_usec) - (toExecute.inicio.tv_sec * 1000000 + toExecute.inicio.tv_usec)) / 1000;
 
     int len = snprintf(NULL, 0, "%d %s %ld ms\n", buf.n_task, copy, tempo_execucao);
     char *toWrite_output = malloc(len + 1);
@@ -235,8 +236,9 @@ void executePipeline (Msg toExecute, char* server_output_info){
 
 
 void executeSingle (Msg toExecute, char* server_output_info) {
-    struct timeval inicio_time, fim_time;
-    gettimeofday(&inicio_time, NULL);
+    struct timeval fim_time; //inicio_time
+
+    //gettimeofday(&inicio_time, NULL);
     
     int status;
 
@@ -260,7 +262,7 @@ void executeSingle (Msg toExecute, char* server_output_info) {
     int save_errors = dup(2);
     dup2(output_descritor, 2);
 
-    char** commands = malloc(300);
+    char** commands = malloc(320);
     separa_argumentos(commands, buf.argumentos,buf.tipo);
     char* aux = malloc(strlen(server_output_info) + 15);
 
@@ -299,7 +301,7 @@ void executeSingle (Msg toExecute, char* server_output_info) {
         return;
     }
 
-    long tempo_execucao = ((fim_time.tv_sec * 1000000 + fim_time.tv_usec) - (inicio_time.tv_sec * 1000000 + inicio_time.tv_usec)) / 1000;
+    long tempo_execucao = ((fim_time.tv_sec * 1000000 + fim_time.tv_usec) - (toExecute.inicio.tv_sec * 1000000 + toExecute.inicio.tv_usec)) / 1000;
 
     
     int len = snprintf(NULL, 0, "%d %s %ld ms\n", buf.n_task, copy, tempo_execucao);
@@ -312,7 +314,6 @@ void executeSingle (Msg toExecute, char* server_output_info) {
     close(server_output_inf);
     close(output_descritor);
     dup2(save_errors, 2);
-    //n_tasks++;
 
     free(commands);
     free(aux);
@@ -431,7 +432,7 @@ int exec_task (Msg toExecute, int in_execution_id, char* output_folder, char* pr
     
     int available3 = open(process, O_WRONLY | O_TRUNC);
 
-
+    free(in_execution);
     close(available3);
 
     return 0;

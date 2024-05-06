@@ -150,6 +150,8 @@ int main (int argc, char* argv[]) {
                 return 1;
             } else {
 
+                gettimeofday(&toRead.inicio, NULL);
+
                 //ENVIA MENSAGEM PARA O CLIENTE QUE A TASK FOI RECEBIDA
                 toRead.n_task = n_tasks++;
                 sprintf(toRead.response, "TASK %d Received\n", toRead.n_task);
