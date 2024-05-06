@@ -401,16 +401,6 @@ int exec_task (Msg toExecute, int in_execution_id, char* output_folder, char* pr
     char* in_execution = malloc(strlen("../tmp/IN_EXECUTION") + 5);
     sprintf(in_execution, "../tmp/IN_EXECUTION%d", in_execution_id);
 
-    //utilizado para calcular os tempos de execução e de espera dos processos
-    /* int tt = open("../tmp/TEMPO_TOTAL", O_WRONLY | O_APPEND);
-    struct timeval fim;
-    gettimeofday(&fim, NULL);
-    double total_time = (double)((fim.tv_sec - toExecute.tempo_inicial.tv_sec) + (fim.tv_usec - toExecute.tempo_inicial.tv_usec) / 1000000.0);
-    char* teste = malloc(strlen("%.6f\n") + 4);
-    sprintf(teste, "%.6f\n", total_time);
-    write(tt, teste, strlen(teste));
-    close(tt); */
-
     int server_execution = open(in_execution, O_WRONLY | O_CREAT | O_TRUNC, 0644);
     if (server_execution == -1) {
         perror("open");
