@@ -54,6 +54,8 @@ int writeInPipe (char* input, int tipo, int tempo) {
         } 
     }
 
+    free(fd_client_path);
+
 
     size_t bytes_read;
     //APENAS DIZ QUE RECEBEU A QUERY (TASK RECEIVED)
